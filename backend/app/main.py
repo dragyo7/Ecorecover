@@ -1,20 +1,30 @@
 from fastapi import FastAPI
 
+from app.api.v1.router import api_router
+from app.core.config import settings
+
 app = FastAPI(
-    title="EcoRecover API",
-    version="1.0.0",
-    description="Backend API for EcoRecover - AI Powered E-Waste Valuation Platform"
+    title=settings.APP_NAME,
+    version=settings.VERSION,
+    description="AI Powered E-Waste Recovery Platform"
 )
+
 
 @app.get("/")
 def root():
     return {
-        "message": "Welcome to EcoRecover API 🚀",
-        "status": "running"
+        "message": "EcoRecover Backend Running 🚀"
     }
+
 
 @app.get("/health")
 def health():
     return {
         "status": "healthy"
     }
+
+
+app.include_router(
+    api_router,
+    prefix="/api/v1"
+)
