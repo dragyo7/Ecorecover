@@ -1,15 +1,14 @@
-from pydantic_settings import BaseSettings
+from app.core.settings import settings
+from app.core.paths import *
 
-
-class Settings(BaseSettings):
-    APP_NAME: str = "EcoRecover API"
-    VERSION: str = "1.0.0"
-
-    SUPABASE_URL: str = ""
-    SUPABASE_KEY: str = ""
-
-    class Config:
-        env_file = ".env"
-
-
-settings = Settings()
+__all__ = [
+    "settings",
+    "APP_DIR",
+    "BASE_DIR",
+    "DATA_DIR",
+    "DATASET_PATH",
+    "LATEST_PRICE_FILE",
+    "ECONOMIC_HISTORY_FILE",
+    "PRICE_HISTORY_FILE",
+    "METAL_PRICE_HISTORY_FILE",
+]
