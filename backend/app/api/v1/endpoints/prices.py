@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+from app.services.price_service import PriceService
 
 router = APIRouter()
 
@@ -6,9 +7,4 @@ router = APIRouter()
 @router.get("/")
 def get_prices():
 
-    return {
-        "gold": 10500,
-        "silver": 125,
-        "copper": 0.95,
-        "currency": "INR"
-    }
+    return PriceService.get_live_prices()
