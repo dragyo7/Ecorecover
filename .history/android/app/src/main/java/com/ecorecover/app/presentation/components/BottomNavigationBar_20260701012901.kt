@@ -71,4 +71,4 @@ fun BottomNavigationBar(
 
     }
 
-}   
+}
