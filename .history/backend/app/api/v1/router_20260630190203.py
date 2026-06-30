@@ -1,12 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import (
-    prices,
-    estimate,
-    auth,
-    appointments,
-    history,
-)
+from app.api.v1.endpoints import prices, estimate, auth, appointments
 
 api_router = APIRouter()
 
@@ -32,10 +26,4 @@ api_router.include_router(
     appointments.router,
     prefix="/appointments",
     tags=["Appointments"]
-)
-
-api_router.include_router(
-    history.router,
-    prefix="/history",
-    tags=["History"]
 )

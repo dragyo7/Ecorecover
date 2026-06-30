@@ -33,9 +33,3 @@ api_router.include_router(
     prefix="/appointments",
     tags=["Appointments"]
 )
-
-api_router.include_router(
-    history.router,
-    prefix="/history",
-    tags=["History"]
-)

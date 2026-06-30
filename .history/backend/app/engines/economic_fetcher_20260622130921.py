@@ -12,13 +12,8 @@ import os
 
 COMMODITIES_URL = "https://tradingeconomics.com/commodities"
 
-from app.core.paths import (
-    LATEST_PRICE_FILE,
-    ECONOMIC_HISTORY_FILE,
-)
-
-LATEST_FILE = LATEST_PRICE_FILE
-HISTORY_FILE = ECONOMIC_HISTORY_FILE
+LATEST_FILE = "economic_latest.json"
+HISTORY_FILE = "economic_history.csv"
 
 TROY_OUNCE_TO_GRAMS = 31.1034768
 METRIC_TON_TO_GRAMS = 1_000_000
