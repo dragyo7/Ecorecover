@@ -18,7 +18,17 @@ def signup(request: SignupRequest):
 @router.post("/login")
 def login(request: LoginRequest):
 
-    return AuthService.login(
+    response = AuthService.login(
         request.email,
         request.password
     )
+
+    return {
+        "success": True,
+        "message": "Login successful",
+        "data": {
+            "access_token": response.session.access_token,
+            "refresh_token": response.session.refresh_token,
+            "user": response.user
+        }
+    }

@@ -15,9 +15,3 @@ api_router.include_router(
     prefix="/estimate",
     tags=["Estimate"]
 )
-
-api_router.include_router(
-    auth.router,
-    prefix="/auth",
-    tags=["Authentication"]
-)
