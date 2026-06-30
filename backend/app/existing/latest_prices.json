@@ -1,0 +1,47 @@
+{
+    "Gold": {
+        "metal": "Gold",
+        "price_per_g": 14752.7,
+        "price_10g": 147527.0,
+        "price_100g": 1475270.0,
+        "price_1kg": 14752700.0,
+        "source_unit": "g",
+        "scraped_at": "2026-06-22T12:33:50.044098"
+    },
+    "Silver": {
+        "metal": "Silver",
+        "price_per_g": 243.43,
+        "price_10g": 2434.3,
+        "price_100g": 24343.0,
+        "price_1kg": 243430.0,
+        "source_unit": "kg",
+        "scraped_at": "2026-06-22T12:33:51.935763"
+    },
+    "Copper": {
+        "metal": "Copper",
+        "price_per_g": 1.318,
+        "price_10g": 13.18,
+        "price_100g": 131.8,
+        "price_1kg": 1318.0,
+        "source_unit": "kg",
+        "scraped_at": "2026-06-22T12:33:53.812630"
+    },
+    "Platinum": {
+        "metal": "Platinum",
+        "price_per_g": 6193.56,
+        "price_10g": 61935.6,
+        "price_100g": 619356.0,
+        "price_1kg": 6193560.0,
+        "source_unit": "10g",
+        "scraped_at": "2026-06-22T12:33:55.689210"
+    },
+    "Palladium": {
+        "metal": "Palladium",
+        "price_per_g": 473.57,
+        "price_10g": 4735.7,
+        "price_100g": 47357.0,
+        "price_1kg": 473570.0,
+        "source_unit": "10g",
+        "scraped_at": "2026-06-22T12:33:57.832765"
+    }
+}
