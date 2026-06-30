@@ -2,7 +2,7 @@ import json
 from datetime import datetime
 
 
-from app.engines.ewaste_lookup import EwasteLookup
+from app.existing.engines.ewaste_lookup import EwasteLookup
 
 class CostFetcher:
 
