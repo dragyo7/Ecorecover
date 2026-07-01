@@ -74,7 +74,7 @@ fun EstimateScreen(
                     Spacer(modifier = Modifier.height(20.dp))
 
                     MetalBreakdownCard(
-                        metals = estimate.metal_content_used
+                        metals = estimate.metal_valuation
                     )
 
                     Spacer(modifier = Modifier.height(20.dp))

@@ -6,7 +6,14 @@ class AppointmentService:
     @staticmethod
     def create(data: dict):
 
-        if not data.get("user_id"):
+        # Remove invalid user_id during development
+        user_id = data.get("user_id")
+
+        if (
+            user_id is None
+            or user_id == ""
+            or user_id == "string"
+        ):
             data.pop("user_id", None)
 
         response = (
@@ -31,7 +38,6 @@ class AppointmentService:
             .select("*")
             .order("created_at", desc=True)
             .execute()
-        )
 
         return {
             "success": True,

@@ -19,7 +19,6 @@ def root():
         "version": settings.VERSION,
         "status": "Running",
         "documentation": "/docs",
-        "api": "/api/v1",
         "search": "/api/v1/search",
         "estimate": "/api/v1/estimate",
         "market": "/api/v1/prices"
@@ -28,15 +27,13 @@ def root():
 
 @app.get("/health")
 def health():
-
-    from app.core.paths import DATASET_PATH, LATEST_PRICE_FILE
-
     return {
-        "status": "Healthy",
-        "version": settings.VERSION,
+        "status": "healthy",
         "dataset_loaded": DATASET_PATH.exists(),
-        "price_cache_loaded": LATEST_PRICE_FILE.exists()
+        "price_cache_loaded": LATEST_PRICE_FILE.exists(),
+        "version": settings.VERSION
     }
+
 
 app.include_router(
     api_router,

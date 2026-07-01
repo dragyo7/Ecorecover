@@ -14,7 +14,8 @@ class EstimateViewModel : ViewModel() {
     private val _uiState =
         MutableStateFlow(EstimateUiState())
 
-    val uiState: StateFlow<EstimateUiState> = _uiState
+    val uiState: StateFlow<EstimateUiState> =
+        _uiState
 
     init {
         loadEstimate("Iphone")
@@ -24,24 +25,27 @@ class EstimateViewModel : ViewModel() {
 
         viewModelScope.launch {
 
-            _uiState.value = EstimateUiState(
-                isLoading = true
-            )
+            _uiState.value =
+                EstimateUiState(
+                    loading = true
+                )
 
             try {
 
                 val response =
-                    repository.getEstimate(product)
+                    repository.estimate(product)
 
-                _uiState.value = EstimateUiState(
-                    estimate = response.data
-                )
+                _uiState.value =
+                    EstimateUiState(
+                        estimate = response
+                    )
 
             } catch (e: Exception) {
 
-                _uiState.value = EstimateUiState(
-                    error = e.localizedMessage ?: "Unknown error"
-                )
+                _uiState.value =
+                    EstimateUiState(
+                        error = e.message
+                    )
 
             }
 

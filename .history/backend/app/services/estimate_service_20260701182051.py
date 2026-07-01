@@ -13,27 +13,25 @@ class EstimateService:
     def estimate(self, product: str):
 
         result = self.engine.calculate(product)
-
-        # Round overall estimate
+        
         if "estimated_total_value_inr" in result:
-            result["estimated_total_value_inr"] = round(
-                result["estimated_total_value_inr"], 2
+    result["estimated_total_value_inr"] = round(
+        result["estimated_total_value_inr"], 2
+    )
+
+for metal in result.get("metal_valuation", {}).values():
+
+        if "live_price" in metal:
+            metal["live_price"] = round(
+            metal["live_price"], 2
             )
 
-        # Round metal values
-        for metal in result.get("metal_valuation", {}).values():
+        if "estimated_value" in metal:
+            metal["estimated_value"] = round(
+            metal["estimated_value"], 2
+        )
+        
 
-            if "live_price" in metal:
-                metal["live_price"] = round(
-                    metal["live_price"], 2
-                )
-
-            if "estimated_value" in metal:
-                metal["estimated_value"] = round(
-                    metal["estimated_value"], 2
-                )
-
-        # Error handling
         if "error" in result:
             return {
                 "success": False,
@@ -41,8 +39,7 @@ class EstimateService:
                 "data": None
             }
 
-        # Success response
-        return {
+            return {
             "success": True,
             "message": "Estimate generated successfully",
             "data": result

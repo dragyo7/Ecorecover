@@ -41,9 +41,3 @@ api_router.include_router(
     prefix="/history",
     tags=["History"]
 )
-
-api_router.include_router(
-    search.router,
-    prefix="/search",
-    tags=["Search"]
-)

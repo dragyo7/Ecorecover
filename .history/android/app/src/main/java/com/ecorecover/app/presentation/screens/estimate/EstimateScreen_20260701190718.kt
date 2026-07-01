@@ -31,21 +31,17 @@ fun EstimateScreen(
 
     when {
 
-        uiState.isLoading -> {
-
+        uiState.loading -> {
             LoadingScreen()
-
         }
 
         uiState.error != null -> {
-
             ErrorScreen(
                 message = uiState.error!!,
                 onRetry = {
                     viewModel.loadEstimate("iPhone 11")
                 }
             )
-
         }
 
         uiState.estimate != null -> {
@@ -74,7 +70,7 @@ fun EstimateScreen(
                     Spacer(modifier = Modifier.height(20.dp))
 
                     MetalBreakdownCard(
-                        metals = estimate.metal_content_used
+                        metals = estimate.metalValuation
                     )
 
                     Spacer(modifier = Modifier.height(20.dp))

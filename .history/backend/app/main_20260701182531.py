@@ -19,7 +19,6 @@ def root():
         "version": settings.VERSION,
         "status": "Running",
         "documentation": "/docs",
-        "api": "/api/v1",
         "search": "/api/v1/search",
         "estimate": "/api/v1/estimate",
         "market": "/api/v1/prices"
