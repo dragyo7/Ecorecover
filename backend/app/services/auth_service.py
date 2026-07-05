@@ -24,6 +24,7 @@ class AuthService:
             return {
                 "success": True,
                 "message": "Signup successful",
+                "status": "VERIFICATION_REQUIRED",
                 "data": response.user.model_dump() if response.user else None
             }
 
@@ -32,6 +33,7 @@ class AuthService:
             return {
                 "success": False,
                 "message": str(e),
+                "status": "ERROR",
                 "data": None
             }
 
@@ -50,6 +52,7 @@ class AuthService:
             return {
                 "success": True,
                 "message": "Login successful",
+                "status": "SUCCESS",
                 "data": {
                     "user": response.user.model_dump(),
                     "access_token": response.session.access_token
@@ -58,8 +61,34 @@ class AuthService:
 
         except AuthApiError as e:
 
+            if str(e) == "Email not confirmed":
+                return {
+                    "success": True,
+                    "message": "Email verification required",
+                    "status": "VERIFICATION_REQUIRED",
+                    "data": None
+                }
+
             return {
                 "success": False,
                 "message": str(e),
+                "status": "ERROR",
                 "data": None
+            }
+
+    @staticmethod
+    def resend_verification(email: str):
+        try:
+            supabase.auth.resend({
+                "type": "signup",
+                "email": email
+            })
+            return {
+                "success": True,
+                "message": "Verification email resent successfully"
+            }
+        except AuthApiError as e:
+            return {
+                "success": False,
+                "message": str(e)
             }

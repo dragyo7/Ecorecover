@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.schemas.auth import SignupRequest, LoginRequest
+from app.schemas.auth import SignupRequest, LoginRequest, ResendRequest
 from app.services.auth_service import AuthService
 
 router = APIRouter()
@@ -21,4 +21,11 @@ def login(request: LoginRequest):
     return AuthService.login(
         request.email,
         request.password
+    )
+
+@router.post("/resend")
+def resend(request: ResendRequest):
+
+    return AuthService.resend_verification(
+        request.email
     )
