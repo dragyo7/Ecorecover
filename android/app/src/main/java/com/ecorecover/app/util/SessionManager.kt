@@ -2,6 +2,8 @@ package com.ecorecover.app.util
 
 import android.content.Context
 import android.content.SharedPreferences
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 class SessionManager(context: Context) {
 
@@ -9,6 +11,21 @@ class SessionManager(context: Context) {
         PREFS_NAME,
         Context.MODE_PRIVATE
     )
+    // SessionState flow
+    private val _sessionState = MutableStateFlow<SessionState>(SessionState.Unauthenticated)
+    val sessionState: StateFlow<SessionState> = _sessionState
+
+    init {
+        // Restore persisted session on init
+        val token = prefs.getString(KEY_TOKEN, null)
+        val userId = prefs.getString(KEY_USER_ID, null)
+        val fullName = prefs.getString(KEY_NAME, null)
+        if (!token.isNullOrBlank() && !userId.isNullOrBlank() && !fullName.isNullOrBlank()) {
+            _sessionState.value = SessionState.Authenticated(userId, fullName)
+        }
+        // static reference for interceptor
+        instance = this
+    }
 
     fun saveSession(token: String, userId: String, email: String, fullName: String) {
         prefs.edit().apply {
@@ -42,6 +59,7 @@ class SessionManager(context: Context) {
 
     fun clearSession() {
         prefs.edit().clear().apply()
+        _sessionState.value = SessionState.Unauthenticated
     }
 
     companion object {
@@ -50,5 +68,7 @@ class SessionManager(context: Context) {
         private const val KEY_USER_ID = "user_id"
         private const val KEY_EMAIL = "email"
         private const val KEY_NAME = "full_name"
+        // static reference for interceptor
+        var instance: SessionManager? = null
     }
 }

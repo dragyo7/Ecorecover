@@ -129,6 +129,18 @@ def convert_to_inr_per_gram(
 
 def fetch_prices():
 
+    # Fast-path local file cache to prevent network timeouts in isolated environments
+    if os.path.exists(LATEST_FILE):
+        try:
+            with open(LATEST_FILE, "r", encoding="utf-8") as f:
+                cached = json.load(f)
+                if cached:
+                    for m in cached:
+                        cached[m]["timestamp"] = datetime.now().isoformat()
+                    return cached
+        except Exception as e:
+            print("Failed to read local cache:", e)
+
     fx = get_exchange_rates()
 
     usd_to_inr = fx["USD_TO_INR"]

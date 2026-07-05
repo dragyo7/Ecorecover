@@ -28,45 +28,45 @@ fun BottomNavigationBar(
     ) {
 
         Screen.bottomBarItems.forEach { screen ->
+            if (screen != null) {
+                NavigationBarItem(
 
-            NavigationBarItem(
+                    selected = currentRoute == screen.route,
 
-                selected = currentRoute == screen.route,
+                    onClick = {
 
-                onClick = {
+                        navController.navigate(screen.route) {
 
-                    navController.navigate(screen.route) {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
 
-                        popUpTo(navController.graph.findStartDestination().id) {
-                            saveState = true
+                            launchSingleTop = true
+
+                            restoreState = true
                         }
 
-                        launchSingleTop = true
+                    },
 
-                        restoreState = true
-                    }
+                    icon = {
 
-                },
+                        Icon(
+                            imageVector = screen.icon,
+                            contentDescription = screen.title
+                        )
 
-                icon = {
+                    },
 
-                    Icon(
-                        imageVector = screen.icon,
-                        contentDescription = screen.title
-                    )
+                    label = {
 
-                },
+                        Text(screen.title)
 
-                label = {
+                    },
 
-                    Text(screen.title)
+                    colors = NavigationBarItemDefaults.colors()
 
-                },
-
-                colors = NavigationBarItemDefaults.colors()
-
-            )
-
+                )
+            }
         }
 
     }

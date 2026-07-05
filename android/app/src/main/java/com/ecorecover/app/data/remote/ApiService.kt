@@ -10,6 +10,9 @@ import com.ecorecover.app.data.model.LoginRequest
 import com.ecorecover.app.data.model.LoginResponse
 import com.ecorecover.app.data.model.ResendRequest
 import com.ecorecover.app.data.model.ResendResponse
+import com.ecorecover.app.data.model.AppointmentRequest
+import com.ecorecover.app.data.model.AppointmentResponse
+import com.ecorecover.app.data.model.AppointmentCreateResponse
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -44,4 +47,12 @@ interface ApiService {
     suspend fun resend(
         @Body request: ResendRequest
     ): ResendResponse
+
+    @POST("api/v1/appointments/")
+    suspend fun createAppointment(
+        @Body request: AppointmentRequest
+    ): AppointmentCreateResponse
+
+    @GET("api/v1/appointments/")
+    suspend fun getAppointments(): AppointmentResponse
 }

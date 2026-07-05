@@ -16,10 +16,6 @@ class EstimateViewModel : ViewModel() {
 
     val uiState: StateFlow<EstimateUiState> = _uiState
 
-    init {
-        loadEstimate("Iphone")
-    }
-
     fun loadEstimate(product: String) {
 
         viewModelScope.launch {
@@ -33,9 +29,15 @@ class EstimateViewModel : ViewModel() {
                 val response =
                     repository.getEstimate(product)
 
-                _uiState.value = EstimateUiState(
-                    estimate = response.data
-                )
+                if (response.success && response.data != null) {
+                    _uiState.value = EstimateUiState(
+                        estimate = response.data
+                    )
+                } else {
+                    _uiState.value = EstimateUiState(
+                        error = response.message.ifBlank { "Failed to get device valuation estimate" }
+                    )
+                }
 
             } catch (e: Exception) {
 

@@ -1,0 +1,343 @@
+[33mtag v4.1[m
+Tagger: dragyo7 <78262498+dragyo7@users.noreply.github.com>
+Date:   Sun Jul 5 22:17:04 2026 +0530
+
+Authentication complete
+
+[33mcommit 4542fc671cf2372c1c86009345703ee2918e4909[m[33m ([m[1;33mtag: [m[1;33mv4.1[m[33m)[m
+Author: dragyo7 <78262498+dragyo7@users.noreply.github.com>
+Date:   Sun Jul 5 22:17:01 2026 +0530
+
+    feat: complete phase 2 authentication foundation
+
+[1mdiff --git a/backend/app/api/v1/endpoints/__pycache__/auth.cpython-312.pyc b/backend/app/api/v1/endpoints/__pycache__/auth.cpython-312.pyc[m
+[1mindex 8c25d3c..3bcf754 100644[m
+Binary files a/backend/app/api/v1/endpoints/__pycache__/auth.cpython-312.pyc and b/backend/app/api/v1/endpoints/__pycache__/auth.cpython-312.pyc differ
+[1mdiff --git a/backend/app/api/v1/endpoints/auth.py b/backend/app/api/v1/endpoints/auth.py[m
+[1mindex 1c6b02d..40d566b 100644[m
+[1m--- a/backend/app/api/v1/endpoints/auth.py[m
+[1m+++ b/backend/app/api/v1/endpoints/auth.py[m
+[36m@@ -1,6 +1,6 @@[m
+ from fastapi import APIRouter[m
+ [m
+[31m-from app.schemas.auth import SignupRequest, LoginRequest[m
+[32m+[m[32mfrom app.schemas.auth import SignupRequest, LoginRequest, ResendRequest[m
+ from app.services.auth_service import AuthService[m
+ [m
+ router = APIRouter()[m
+[36m@@ -21,4 +21,11 @@[m [mdef login(request: LoginRequest):[m
+     return AuthService.login([m
+         request.email,[m
+         request.password[m
+[32m+[m[32m    )[m
+[32m+[m
+[32m+[m[32m@router.post("/resend")[m
+[32m+[m[32mdef resend(request: ResendRequest):[m
+[32m+[m
+[32m+[m[32m    return AuthService.resend_verification([m
+[32m+[m[32m        request.email[m
+     )[m
+\ No newline at end of file[m
+[1mdiff --git a/backend/app/core/__pycache__/settings.cpython-312.pyc b/backend/app/core/__pycache__/settings.cpython-312.pyc[m
+[1mindex 9750e20..e5ddafe 100644[m
+Binary files a/backend/app/core/__pycache__/settings.cpython-312.pyc and b/backend/app/core/__pycache__/settings.cpython-312.pyc differ
+[1mdiff --git a/backend/app/schemas/__pycache__/auth.cpython-312.pyc b/backend/app/schemas/__pycache__/auth.cpython-312.pyc[m
+[1mindex f59be65..2dca9ba 100644[m
+Binary files a/backend/app/schemas/__pycache__/auth.cpython-312.pyc and b/backend/app/schemas/__pycache__/auth.cpython-312.pyc differ
+[1mdiff --git a/backend/app/schemas/auth.py b/backend/app/schemas/auth.py[m
+[1mindex 8a51493..433aa21 100644[m
+[1m--- a/backend/app/schemas/auth.py[m
+[1m+++ b/backend/app/schemas/auth.py[m
+[36m@@ -9,4 +9,8 @@[m [mclass SignupRequest(BaseModel):[m
+ [m
+ class LoginRequest(BaseModel):[m
+     email: EmailStr[m
+[31m-    password: str[m
+\ No newline at end of file[m
+[32m+[m[32m    password: str[m
+[32m+[m
+[32m+[m
+[32m+[m[32mclass ResendRequest(BaseModel):[m
+[32m+[m[32m    email: EmailStr[m
+\ No newline at end of file[m
+[1mdiff --git a/backend/app/services/__pycache__/auth_service.cpython-312.pyc b/backend/app/services/__pycache__/auth_service.cpython-312.pyc[m
+[1mindex 01f6830..ea632d7 100644[m
+Binary files a/backend/app/services/__pycache__/auth_service.cpython-312.pyc and b/backend/app/services/__pycache__/auth_service.cpython-312.pyc differ
+[1mdiff --git a/backend/app/services/auth_service.py b/backend/app/services/auth_service.py[m
+[1mindex 706fec7..29ebd75 100644[m
+[1m--- a/backend/app/services/auth_service.py[m
+[1m+++ b/backend/app/services/auth_service.py[m
+[36m@@ -24,6 +24,7 @@[m [mclass AuthService:[m
+             return {[m
+                 "success": True,[m
+                 "message": "Signup successful",[m
+[32m+[m[32m                "status": "VERIFICATION_REQUIRED",[m
+                 "data": response.user.model_dump() if response.user else None[m
+             }[m
+ [m
+[36m@@ -32,6 +33,7 @@[m [mclass AuthService:[m
+             return {[m
+                 "success": False,[m
+                 "message": str(e),[m
+[32m+[m[32m                "status": "ERROR",[m
+                 "data": None[m
+             }[m
+ [m
+[36m@@ -50,6 +52,7 @@[m [mclass AuthService:[m
+             return {[m
+                 "success": True,[m
+                 "message": "Login successful",[m
+[32m+[m[32m                "status": "SUCCESS",[m
+                 "data": {[m
+                     "user": response.user.model_dump(),[m
+                     "access_token": response.session.access_token[m
+[36m@@ -58,8 +61,34 @@[m [mclass AuthService:[m
+ [m
+         except AuthApiError as e:[m
+ [m
+[32m+[m[32m            if str(e) == "Email not confirmed":[m
+[32m+[m[32m                return {[m
+[32m+[m[32m                    "success": True,[m
+[32m+[m[32m                    "message": "Email verification required",[m
+[32m+[m[32m                    "status": "VERIFICATION_REQUIRED",[m
+[32m+[m[32m                    "data": None[m
+[32m+[m[32m                }[m
+[32m+[m
+             return {[m
+                 "success": False,[m
+                 "message": str(e),[m
+[32m+[m[32m                "status": "ERROR",[m
+                 "data": None[m
+[32m+[m[32m            }[m
+[32m+[m
+[32m+[m[32m    @staticmethod[m
+[32m+[m[32m    def resend_verification(email: str):[m
+[32m+[m[32m        try:[m
+[32m+[m[32m            supabase.auth.resend({[m
+[32m+[m[32m                "type": "signup",[m
+[32m+[m[32m                "email": email[m
+[32m+[m[32m            })[m
+[32m+[m[32m            return {[m
+[32m+[m[32m                "success": True,[m
+[32m+[m[32m                "message": "Verification email resent successfully"[m
+[32m+[m[32m            }[m
+[32m+[m[32m        except AuthApiError as e:[m
+[32m+[m[32m            return {[m
+[32m+[m[32m                "success": False,[m
+[32m+[m[32m                "message": str(e)[m
+             }[m
+\ No newline at end of file[m
+[1mdiff --git a/backend/scratch/test_auth_api.py b/backend/scratch/test_auth_api.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..fba0fb4[m
+[1m--- /dev/null[m
+[1m+++ b/backend/scratch/test_auth_api.py[m
+[36m@@ -0,0 +1,111 @@[m
+[32m+[m[32mimport requests[m
+[32m+[m[32mimport random[m
+[32m+[m[32mimport sys[m
+[32m+[m
+[32m+[m[32mBASE_URL = "http://127.0.0.1:8000/api/v1/auth"[m
+[32m+[m
+[32m+[m[32mdef run_tests():[m
+[32m+[m[32m    random_id = random.randint(1000, 9999)[m
+[32m+[m[32m    email = f"test_user_{random_id}@ecorecover.com"[m
+[32m+[m[32m    password = "securepassword123"[m
+[32m+[m[32m    full_name = f"Test User {random_id}"[m
+[32m+[m
+[32m+[m[32m    print(f"--- Running Auth Integration Tests for email: {email} ---")[m
+[32m+[m
+[32m+[m[32m    # TEST A: Successful Signup[m
+[32m+[m[32m    signup_payload = {[m
+[32m+[m[32m        "full_name": full_name,[m
+[32m+[m[32m        "email": email,[m
+[32m+[m[32m        "password": password[m
+[32m+[m[32m    }[m
+[32m+[m[32m    print("\n[A] Registering new user...")[m
+[32m+[m[32m    try:[m
+[32m+[m[32m        response = requests.post(f"{BASE_URL}/signup", json=signup_payload)[m
+[32m+[m[32m        print("Status Code:", response.status_code)[m
+[32m+[m[32m        data = response.json()[m
+[32m+[m[32m        print("Response payload:", data)[m
+[32m+[m[32m        assert response.status_code == 200, "Signup should return 200"[m
+[32m+[m[32m        assert data["success"] is True, "Signup should be successful"[m
+[32m+[m[32m        assert data["status"] == "VERIFICATION_REQUIRED", "Signup should return status='VERIFICATION_REQUIRED'"[m
+[32m+[m[32m        print("PASS: Signup successful, Verification Required state exposed")[m
+[32m+[m[32m    except Exception as e:[m
+[32m+[m[32m        print("FAIL: Signup failed:", str(e))[m
+[32m+[m[32m        sys.exit(1)[m
+[32m+[m
+[32m+[m[32m    # TEST B: Duplicate Email Handling[m
+[32m+[m[32m    print("\n[B] Attempting duplicate registration...")[m
+[32m+[m[32m    try:[m
+[32m+[m[32m        response = requests.post(f"{BASE_URL}/signup", json=signup_payload)[m
+[32m+[m[32m        print("Status Code:", response.status_code)[m
+[32m+[m[32m        data = response.json()[m
+[32m+[m[32m        print("Response payload:", data)[m
+[32m+[m[32m        assert data["success"] is False, "Duplicate signup should return success=False"[m
+[32m+[m[32m        print("PASS: Duplicate registration blocked with success=False")[m
+[32m+[m[32m    except Exception as e:[m
+[32m+[m[32m        print("FAIL: Duplicate registration test failed:", str(e))[m
+[32m+[m[32m        sys.exit(1)[m
+[32m+[m
+[32m+[m[32m    # TEST C: Login with Invalid Credentials[m
+[32m+[m[32m    print("\n[C] Logging in with incorrect password...")[m
+[32m+[m[32m    try:[m
+[32m+[m[32m        login_payload = {[m
+[32m+[m[32m            "email": email,[m
+[32m+[m[32m            "password": "wrongpassword"[m
+[32m+[m[32m        }[m
+[32m+[m[32m        response = requests.post(f"{BASE_URL}/login", json=login_payload)[m
+[32m+[m[32m        print("Status Code:", response.status_code)[m
+[32m+[m[32m        data = response.json()[m
+[32m+[m[32m        print("Response payload:", data)[m
+[32m+[m[32m        assert data["success"] is False, "Login with wrong password should fail"[m
+[32m+[m[32m        print("PASS: Invalid credentials rejected")[m
+[32m+[m[32m    except Exception as e:[m
+[32m+[m[32m        print("FAIL: Invalid credentials login test failed:", str(e))[m
+[32m+[m[32m        sys.exit(1)[m
+[32m+[m
+[32m+[m[32m    # TEST D: Login with Correct Credentials (expecting verification required status)[m
+[32m+[m[32m    print("\n[D] Logging in with correct credentials (expecting verification required status)...")[m
+[32m+[m[32m    try:[m
+[32m+[m[32m        login_payload = {[m
+[32m+[m[32m            "email": email,[m
+[32m+[m[32m            "password": password[m
+[32m+[m[32m        }[m
+[32m+[m[32m        response = requests.post(f"{BASE_URL}/login", json=login_payload)[m
+[32m+[m[32m        print("Status Code:", response.status_code)[m
+[32m+[m[32m        data = response.json()[m
+[32m+[m[32m        print("Response payload:", data)[m
+[32m+[m[32m        assert response.status_code == 200, "Login should return 200"[m
+[32m+[m[32m        assert data["success"] is True, "Login should return success=True"[m
+[32m+[m[32m        assert data["status"] == "VERIFICATION_REQUIRED", "Login status should be VERIFICATION_REQUIRED"[m
+[32m+[m[32m        assert data["data"] is None, "Login data must be null for unconfirmed accounts"[m
+[32m+[m[32m        print("PASS: VERIFICATION_REQUIRED state successfully returned!")[m
+[32m+[m[32m    except Exception as e:[m
+[32m+[m[32m        print("FAIL: Valid login verification test failed:", str(e))[m
+[32m+[m[32m        sys.exit(1)[m
+[32m+[m
+[32m+[m[32m    # TEST E: Resend Verification Email[m
+[32m+[m[32m    print("\n[E] Resending verification email...")[m
+[32m+[m[32m    try:[m
+[32m+[m[32m        resend_payload = {[m
+[32m+[m[32m            "email": email[m
+[32m+[m[32m        }[m
+[32m+[m[32m        response = requests.post(f"{BASE_URL}/resend", json=resend_payload)[m
+[32m+[m[32m        print("Status Code:", response.status_code)[m
+[32m+[m[32m        data = response.json()[m
+[32m+[m[32m        print("Response payload:", data)[m
+[32m+[m[41m        [m
+[32m+[m[32m        is_success = data.get("success") is True[m
+[32m+[m[32m        is_rate_limit = data.get("success") is False and "after" in data.get("message", "")[m
+[32m+[m[41m        [m
+[32m+[m[32m        assert is_success or is_rate_limit, "Resend call must either succeed or return rate limit error from Supabase"[m
+[32m+[m[32m        if is_rate_limit:[m
+[32m+[m[32m            print("PASS: Verification email resend correctly rate-limited by Supabase:", data.get("message"))[m
+[32m+[m[32m        else:[m
+[32m+[m[32m            print("PASS: Verification email resent successfully")[m
+[32m+[m[32m    except Exception as e:[m
+[32m+[m[32m        print("FAIL: Resend verification test failed:", str(e))[m
+[32m+[m[32m        sys.exit(1)[m
+[32m+[m
+[32m+[m[32m    print("\n--- ALL BACKEND INTEGRATION TESTS PASSED ---")[m
+[32m+[m
+[32m+[m[32mif __name__ == "__main__":[m
+[32m+[m[32m    run_tests()[m
+[1mdiff --git a/backend/scratch/test_auth_unit.py b/backend/scratch/test_auth_unit.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..8befbbf[m
+[1m--- /dev/null[m
+[1m+++ b/backend/scratch/test_auth_unit.py[m
+[36m@@ -0,0 +1,91 @@[m
+[32m+[m[32mimport unittest[m
+[32m+[m[32mfrom unittest.mock import patch, MagicMock[m
+[32m+[m[32mfrom supabase_auth.errors import AuthApiError[m
+[32m+[m[32mfrom app.services.auth_service import AuthService[m
+[32m+[m
+[32m+[m
+[32m+[m[32mclass TestAuthServiceUnit(unittest.TestCase):[m
+[32m+[m
+[32m+[m[32m    @patch("app.services.auth_service.supabase")[m
+[32m+[m[32m    def test_signup_success(self, mock_supabase):[m
+[32m+[m[32m        # Mock successful sign up[m
+[32m+[m[32m        mock_user = MagicMock()[m
+[32m+[m[32m        mock_user.model_dump.return_value = {"id": "123", "email": "test@example.com"}[m
+[32m+[m[32m        mock_response = MagicMock()[m
+[32m+[m[32m        mock_response.user = mock_user[m
+[32m+[m[32m        mock_supabase.auth.sign_up.return_value = mock_response[m
+[32m+[m
+[32m+[m[32m        res = AuthService.signup("Test User", "test@example.com", "password")[m
+[32m+[m[32m        self.assertTrue(res["success"])[m
+[32m+[m[32m        self.assertEqual(res["status"], "VERIFICATION_REQUIRED")[m
+[32m+[m[32m        self.assertEqual(res["data"]["id"], "123")[m
+[32m+[m
+[32m+[m[32m    @patch("app.services.auth_service.supabase")[m
+[32m+[m[32m    def test_signup_duplicate_error(self, mock_supabase):[m
+[32m+[m[32m        # Mock AuthApiError for duplicate signup[m
+[32m+[m[32m        mock_supabase.auth.sign_up.side_effect = AuthApiError([m
+[32m+[m[32m            "For security purposes, you can only request this after 57 seconds.",[m[41m [m
+[32m+[m[32m            429,[m
+[32m+[m[32m            "rate_limit"[m
+[32m+[m[32m        )[m
+[32m+[m
+[32m+[m[32m        res = AuthService.signup("Test User", "test@example.com", "password")[m
+[32m+[m[32m        self.assertFalse(res["success"])[m
+[32m+[m[32m        self.assertEqual(res["status"], "ERROR")[m
+[32m+[m[32m        self.assertIn("after 57 seconds", res["message"])[m
+[32m+[m
+[32m+[m[32m    @patch("app.services.auth_service.supabase")[m
+[32m+[m[32m    def test_login_success(self, mock_supabase):[m
+[32m+[m[32m        # Mock successful login[m
+[32m+[m[32m        mock_user = MagicMock()[m
+[32m+[m[32m        mock_user.model_dump.return_value = {"id": "123", "email": "test@example.com"}[m
+[32m+[m[32m        mock_session = MagicMock()[m
+[32m+[m[32m        mock_session.access_token = "access-token-xyz"[m
+[32m+[m[32m        mock_response = MagicMock()[m
+[32m+[m[32m        mock_response.user = mock_user[m
+[32m+[m[32m        mock_response.session = mock_session[m
+[32m+[m[32m        mock_supabase.auth.sign_in_with_password.return_value = mock_response[m
+[32m+[m
+[32m+[m[32m        res = AuthService.login("test@example.com", "password")[m
+[32m+[m[32m        self.assertTrue(res["success"])[m
+[32m+[m[32m        self.assertEqual(res["status"], "SUCCESS")[m
+[32m+[m[32m        self.assertEqual(res["data"]["access_token"], "access-token-xyz")[m
+[32m+[m
+[32m+[m[32m    @patch("app.services.auth_service.supabase")[m
+[32m+[m[32m    def test_login_unconfirmed_error(self, mock_supabase):[m
+[32m+[m[32m        # Mock unconfirmed email error[m
+[32m+[m[32m        mock_supabase.auth.sign_in_with_password.side_effect = AuthApiError([m
+[32m+[m[32m            "Email not confirmed",[m[41m [m
+[32m+[m[32m            400,[m
+[32m+[m[32m            "email_not_confirmed"[m
+[32m+[m[32m        )[m
+[32m+[m
+[32m+[m[32m        res = AuthService.login("test@example.com", "password")[m
+[32m+[m[32m        self.assertTrue(res["success"])[m
+[32m+[m[32m        self.assertEqual(res["status"], "VERIFICATION_REQUIRED")[m
+[32m+[m[32m        self.assertIsNone(res["data"])[m
+[32m+[m
+[32m+[m[32m    @patch("app.services.auth_service.supabase")[m
+[32m+[m[32m    def test_login_invalid_credentials(self, mock_supabase):[m
+[32m+[m[32m        # Mock invalid credentials error[m
+[32m+[m[32m        mock_supabase.auth.sign_in_with_password.side_effect = AuthApiError([m
+[32m+[m[32m            "Invalid login credentials",[m[41m [m
+[32m+[m[32m            400,[m
+[32m+[m[32m            "invalid_credentials"[m
+[32m+[m[32m        )[m
+[32m+[m
+[32m+[m[32m        res = AuthService.login("test@example.com", "password")[m
+[32m+[m[32m        self.assertFalse(res["success"])[m
+[32m+[m[32m        self.assertEqual(res["status"], "ERROR")[m
+[32m+[m
+[32m+[m[32m    @patch("app.services.auth_service.supabase")[m
+[32m+[m[32m    def test_resend_success(self, mock_supabase):[m
+[32m+[m[32m        mock_supabase.auth.resend.return_value = MagicMock()[m
+[32m+[m
+[32m+[m[32m        res = AuthService.resend_verification("test@example.com")[m
+[32m+[m[32m        self.assertTrue(res["success"])[m
+[32m+[m[32m        self.assertEqual(res["message"], "Verification email resent successfully")[m
+[32m+[m
+[32m+[m
+[32m+[m[32mif __name__ == "__main__":[m
+[32m+[m[32m    unittest.main()[m
