@@ -4,6 +4,12 @@ import com.ecorecover.app.data.model.EstimateRequest
 import com.ecorecover.app.data.model.EstimateResponse
 import com.ecorecover.app.data.model.MetalPrice
 import com.ecorecover.app.data.model.SearchResponse
+import com.ecorecover.app.data.model.SignupRequest
+import com.ecorecover.app.data.model.SignupResponse
+import com.ecorecover.app.data.model.LoginRequest
+import com.ecorecover.app.data.model.LoginResponse
+import com.ecorecover.app.data.model.ResendRequest
+import com.ecorecover.app.data.model.ResendResponse
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -23,4 +29,19 @@ interface ApiService {
     suspend fun estimate(
         @Body request: EstimateRequest
     ): EstimateResponse
+
+    @POST("api/v1/auth/signup")
+    suspend fun signup(
+        @Body request: SignupRequest
+    ): SignupResponse
+
+    @POST("api/v1/auth/login")
+    suspend fun login(
+        @Body request: LoginRequest
+    ): LoginResponse
+
+    @POST("api/v1/auth/resend")
+    suspend fun resend(
+        @Body request: ResendRequest
+    ): ResendResponse
 }

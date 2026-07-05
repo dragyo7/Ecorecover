@@ -44,6 +44,26 @@ sealed class Screen(
         Icons.Outlined.Person
     )
 
+    object Login : Screen(
+        "login",
+        "Login",
+        Icons.Outlined.Person
+    )
+
+    object Signup : Screen(
+        "signup",
+        "Signup",
+        Icons.Outlined.Person
+    )
+
+    object Verification : Screen(
+        "verification/{email}",
+        "Verification",
+        Icons.Outlined.Person
+    ) {
+        fun createRoute(email: String) = "verification/$email"
+    }
+
     companion object {
 
         val bottomBarItems = listOf(

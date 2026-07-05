@@ -6,6 +6,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
@@ -20,27 +21,27 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun LoginScreen(
+fun SignupScreen(
     viewModel: AuthViewModel,
-    onLoginSuccess: () -> Unit,
-    onNavigateToSignup: () -> Unit,
-    onNavigateToVerification: (String) -> Unit
+    onSignupSuccess: (String) -> Unit,
+    onNavigateToLogin: () -> Unit
 ) {
-    val loginState by viewModel.loginState.collectAsState()
+    val signupState by viewModel.signupState.collectAsState()
 
+    var fullName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var localError by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(loginState) {
-        if (loginState is AuthState.Success) {
+    LaunchedEffect(signupState) {
+        if (signupState is AuthState.Success) {
             viewModel.resetStates()
-            onLoginSuccess()
-        } else if (loginState is AuthState.VerificationRequired) {
-            val emailParam = (loginState as AuthState.VerificationRequired).email
+            onSignupSuccess(email.trim())
+        } else if (signupState is AuthState.VerificationRequired) {
+            val emailParam = (signupState as AuthState.VerificationRequired).email
             viewModel.resetStates()
-            onNavigateToVerification(emailParam)
+            onSignupSuccess(emailParam)
         }
     }
 
@@ -65,14 +66,14 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(8.dp))
             
             Text(
-                text = "Log in to recycle your e-waste",
+                text = "Create an account to start saving green",
                 fontSize = 16.sp,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
             )
             
             Spacer(modifier = Modifier.height(32.dp))
 
-            val displayError = localError ?: (loginState as? AuthState.Error)?.message
+            val displayError = localError ?: (signupState as? AuthState.Error)?.message
             if (displayError != null) {
                 Card(
                     colors = CardDefaults.cardColors(
@@ -93,6 +94,22 @@ fun LoginScreen(
             }
 
             OutlinedTextField(
+                value = fullName,
+                onValueChange = { 
+                    fullName = it
+                    localError = null
+                },
+                label = { Text("Full Name") },
+                leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                enabled = signupState !is AuthState.Loading
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedTextField(
                 value = email,
                 onValueChange = { 
                     email = it
@@ -104,7 +121,7 @@ fun LoginScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                enabled = loginState !is AuthState.Loading
+                enabled = signupState !is AuthState.Loading
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -115,7 +132,7 @@ fun LoginScreen(
                     password = it
                     localError = null
                 },
-                label = { Text("Password") },
+                label = { Text("Password (Min 6 chars)") },
                 leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                 trailingIcon = {
                     val icon = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
@@ -128,46 +145,48 @@ fun LoginScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                enabled = loginState !is AuthState.Loading
+                enabled = signupState !is AuthState.Loading
             )
 
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(
                 onClick = {
-                    if (email.isBlank() || password.isBlank()) {
-                        localError = "Email and password are required"
+                    if (fullName.isBlank() || email.isBlank() || password.isBlank()) {
+                        localError = "All fields are required"
                     } else if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
                         localError = "Invalid email format"
+                    } else if (password.length < 6) {
+                        localError = "Password must be at least 6 characters"
                     } else {
                         localError = null
-                        viewModel.login(email.trim(), password)
+                        viewModel.signup(fullName.trim(), email.trim(), password)
                     }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
                 shape = RoundedCornerShape(16.dp),
-                enabled = loginState !is AuthState.Loading
+                enabled = signupState !is AuthState.Loading
             ) {
-                if (loginState is AuthState.Loading) {
+                if (signupState is AuthState.Loading) {
                     CircularProgressIndicator(
                         color = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.size(24.dp)
                     )
                 } else {
-                    Text("Log In", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text("Sign Up", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
             TextButton(
-                onClick = onNavigateToSignup,
-                enabled = loginState !is AuthState.Loading
+                onClick = onNavigateToLogin,
+                enabled = signupState !is AuthState.Loading
             ) {
                 Text(
-                    text = "Don't have an account? Sign Up",
+                    text = "Already have an account? Log In",
                     color = MaterialTheme.colorScheme.secondary,
                     fontWeight = FontWeight.SemiBold
                 )
