@@ -117,6 +117,28 @@ sealed class Screen(
         fun createRoute(orderId: String) = "orders/$orderId"
     }
 
+    object Tracking : Screen(
+        "orders/{id}/tracking",
+        "Live Tracking",
+        Icons.Outlined.LocalShipping
+    ) {
+        fun createRoute(orderId: String) = "orders/$orderId/tracking"
+    }
+
+    object Payment : Screen(
+        "orders/{id}/payment?amount={amount}",
+        "Release Payment",
+        Icons.Outlined.Calculate
+    ) {
+        fun createRoute(orderId: String, amount: Double) = "orders/$orderId/payment?amount=$amount"
+    }
+
+    object TransactionHistory : Screen(
+        "transactions",
+        "Transaction History",
+        Icons.Outlined.History
+    )
+
     companion object {
 
         val bottomBarItems: List<Screen>

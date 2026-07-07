@@ -11,6 +11,7 @@ from app.api.v1.endpoints import (
     orders,
     rewards,
     profile,
+    payments,
 )
 
 api_router = APIRouter()
@@ -67,4 +68,10 @@ api_router.include_router(
     profile.router,
     prefix="/profile",
     tags=["Profile"]
+)
+
+api_router.include_router(
+    payments.router,
+    prefix="/payments",
+    tags=["Payments"]
 )

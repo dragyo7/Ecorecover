@@ -32,6 +32,9 @@ import com.ecorecover.app.presentation.screens.pickup.PickupScreen
 import com.ecorecover.app.presentation.screens.pickup.PickupViewModel
 import com.ecorecover.app.presentation.screens.orders.OrdersScreen
 import com.ecorecover.app.presentation.screens.orders.OrderDetailScreen
+import com.ecorecover.app.presentation.screens.orders.TrackingScreen
+import com.ecorecover.app.presentation.screens.orders.PaymentScreen
+import com.ecorecover.app.presentation.screens.orders.TransactionHistoryScreen
 import com.ecorecover.app.presentation.screens.rewards.RewardsScreen
 import com.ecorecover.app.data.repository.AuthRepository
 import com.ecorecover.app.data.repository.MarketRepository
@@ -256,7 +259,13 @@ fun EcoRecoverApp(
                 } else {
                     OrderDetailScreen(
                         orderId = orderId,
-                        onNavigateBack = { navController.navigateUp() }
+                        onNavigateBack = { navController.navigateUp() },
+                        onNavigateToTracking = { id ->
+                            navController.navigate(Screen.Tracking.createRoute(id))
+                        },
+                        onNavigateToPayment = { id, amount ->
+                            navController.navigate(Screen.Payment.createRoute(id, amount))
+                        }
                     )
                 }
             }
@@ -328,7 +337,75 @@ fun EcoRecoverApp(
                             navController.navigate(Screen.Login.route) {
                                 popUpTo(0) { inclusive = true }
                             }
+                        },
+                        onNavigateToTransactions = {
+                            navController.navigate(Screen.TransactionHistory.route)
                         }
+                    )
+                }
+            }
+
+            composable(
+                route = Screen.Tracking.route,
+                arguments = listOf(navArgument("id") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val orderId = backStackEntry.arguments?.getString("id") ?: ""
+                if (!sessionManager.isLoggedIn()) {
+                    LaunchedEffect(Unit) {
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
+                } else {
+                    TrackingScreen(
+                        orderId = orderId,
+                        onNavigateBack = { navController.navigateUp() },
+                        onNavigateToPayment = { id, amount ->
+                            navController.navigate(Screen.Payment.createRoute(id, amount))
+                        }
+                    )
+                }
+            }
+
+            composable(
+                route = Screen.Payment.route,
+                arguments = listOf(
+                    navArgument("id") { type = NavType.StringType },
+                    navArgument("amount") { type = NavType.FloatType }
+                )
+            ) { backStackEntry ->
+                val orderId = backStackEntry.arguments?.getString("id") ?: ""
+                val amount = backStackEntry.arguments?.getFloat("amount")?.toDouble() ?: 0.0
+                if (!sessionManager.isLoggedIn()) {
+                    LaunchedEffect(Unit) {
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
+                } else {
+                    PaymentScreen(
+                        orderId = orderId,
+                        amount = amount,
+                        onNavigateBack = { navController.navigateUp() },
+                        onNavigateToHome = {
+                            navController.navigate(Screen.Home.route) {
+                                popUpTo(Screen.Home.route) { inclusive = true }
+                            }
+                        }
+                    )
+                }
+            }
+
+            composable(Screen.TransactionHistory.route) {
+                if (!sessionManager.isLoggedIn()) {
+                    LaunchedEffect(Unit) {
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
+                } else {
+                    TransactionHistoryScreen(
+                        onNavigateBack = { navController.navigateUp() }
                     )
                 }
             }

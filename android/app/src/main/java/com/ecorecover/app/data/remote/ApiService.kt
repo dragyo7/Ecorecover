@@ -1,22 +1,6 @@
 package com.ecorecover.app.data.remote
 
-import com.ecorecover.app.data.model.EstimateRequest
-import com.ecorecover.app.data.model.EstimateResponse
-import com.ecorecover.app.data.model.MetalPrice
-import com.ecorecover.app.data.model.SearchResponse
-import com.ecorecover.app.data.model.SignupRequest
-import com.ecorecover.app.data.model.SignupResponse
-import com.ecorecover.app.data.model.LoginRequest
-import com.ecorecover.app.data.model.LoginResponse
-import com.ecorecover.app.data.model.ResendRequest
-import com.ecorecover.app.data.model.ResendResponse
-import com.ecorecover.app.data.model.AppointmentRequest
-import com.ecorecover.app.data.model.AppointmentResponse
-import com.ecorecover.app.data.model.AppointmentCreateResponse
-import com.ecorecover.app.data.model.RewardsResponse
-import com.ecorecover.app.data.model.ProfileResponse
-import com.ecorecover.app.data.model.ProfileUpdateRequest
-import com.ecorecover.app.data.model.OrderDetailResponse
+import com.ecorecover.app.data.model.*
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -80,4 +64,17 @@ interface ApiService {
     suspend fun updateProfile(
         @Body request: ProfileUpdateRequest
     ): ProfileResponse
+
+    @POST("api/v1/payments/create-order")
+    suspend fun createPaymentOrder(
+        @Body request: PaymentOrderRequest
+    ): PaymentOrderResponse
+
+    @POST("api/v1/payments/verify")
+    suspend fun verifyPayment(
+        @Body request: PaymentVerifyRequest
+    ): PaymentVerifyResponse
+
+    @GET("api/v1/payments/transactions")
+    suspend fun getTransactions(): TransactionResponse
 }

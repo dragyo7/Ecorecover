@@ -16,6 +16,8 @@ import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.LocalShipping
+import androidx.compose.material.icons.outlined.ReceiptLong
+import androidx.compose.material.icons.outlined.Calculate
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.Crossfade
@@ -42,6 +44,8 @@ import androidx.compose.animation.core.*
 fun OrderDetailScreen(
     orderId: String,
     onNavigateBack: () -> Unit,
+    onNavigateToTracking: (String) -> Unit,
+    onNavigateToPayment: (String, Double) -> Unit,
     viewModel: OrdersViewModel = viewModel()
 ) {
     val detailUiState by viewModel.detailUiState.collectAsState()
@@ -83,7 +87,11 @@ fun OrderDetailScreen(
                         }
                     }
                     is OrderDetailUiState.Success -> {
-                        OrderDetailContent(order = state.order)
+                        OrderDetailContent(
+                            order = state.order,
+                            onNavigateToTracking = onNavigateToTracking,
+                            onNavigateToPayment = onNavigateToPayment
+                        )
                     }
                 }
             }
@@ -92,7 +100,11 @@ fun OrderDetailScreen(
 }
 
 @Composable
-private fun OrderDetailContent(order: AppointmentData) {
+private fun OrderDetailContent(
+    order: AppointmentData,
+    onNavigateToTracking: (String) -> Unit,
+    onNavigateToPayment: (String, Double) -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -220,7 +232,7 @@ private fun OrderDetailContent(order: AppointmentData) {
             }
         }
 
-        // 5. Recycler Info Card
+        // 5. Recycler Info Card with Trust Verification Elements (Feature 2)
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
@@ -230,12 +242,31 @@ private fun OrderDetailContent(order: AppointmentData) {
                 modifier = Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text(
-                    text = "Recycler & Contact",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Recycler & Contact",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(Color(0xFFDCFCE7))
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = "Verified Recycler",
+                            color = Color(0xFF15803D),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 10.sp
+                        )
+                    }
+                }
                 Divider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -250,12 +281,21 @@ private fun OrderDetailContent(order: AppointmentData) {
                     }
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
-                        Text(
-                            text = "Nagpur E-Waste Solutions Hub",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "Green Solutions Nagpur Hub",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Icon(
+                                imageVector = Icons.Default.Verified,
+                                contentDescription = "Verified Recycler Partner",
+                                tint = Color(0xFF22C55E),
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
                         Text(
                             text = "Partner ID: #NGP-RECYCLER-901",
                             style = MaterialTheme.typography.bodySmall,
@@ -265,8 +305,83 @@ private fun OrderDetailContent(order: AppointmentData) {
                 }
 
                 Spacer(modifier = Modifier.height(4.dp))
-                DetailItem(label = "Recycler Partner", value = "Green Solutions Nagpur Hub")
-                DetailItem(label = "Contact Number", value = "+91 98765 43210 (Agent Helpline)")
+                DetailItem(label = "Company Name", value = "Nagpur E-Waste Solutions Hub")
+                DetailItem(label = "GST Registration", value = "27AAAAA0000A1Z5 (Verified)")
+                DetailItem(label = "License Number", value = "LIC-RECYCLE-NGP-2026-8801")
+                DetailItem(label = "Helpline Contact", value = "+91 98765 43210 (Agent Support)")
+                
+                Divider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column {
+                        Text("Rating", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f))
+                        Text("4.8 ★ (1,240 pickups)", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                    }
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text("Response Time", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f))
+                        Text("< 30 mins", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                    }
+                }
+                
+                Column {
+                    Text("Working Hours", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f))
+                    Text("09:00 AM - 06:00 PM (Monday - Saturday)", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Action Buttons (Live Tracking & Payments)
+        if (order.status.lowercase() == "completed") {
+            Button(
+                onClick = { onNavigateToPayment(order.id, order.estimatedPrice) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(imageVector = Icons.Outlined.ReceiptLong, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("View Payout Receipt / Invoice", fontWeight = FontWeight.Bold)
+            }
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Button(
+                    onClick = { onNavigateToTracking(order.id) },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(imageVector = Icons.Default.LocalShipping, contentDescription = null)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Track Pickup", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                }
+
+                Button(
+                    onClick = { onNavigateToPayment(order.id, order.estimatedPrice) },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Calculate,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Release Payout",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
             }
         }
 
