@@ -26,6 +26,12 @@ data class AppointmentCreateResponse(
     val data: List<AppointmentData>?
 )
 
+data class OrderDetailResponse(
+    val success: Boolean,
+    val message: String?,
+    val data: AppointmentData?
+)
+
 data class AppointmentData(
     val id: String,
     @SerializedName("user_id") val userId: String?,

@@ -1,124 +1,402 @@
 package com.ecorecover.app.presentation.screens.profile
 
+import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ExitToApp
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.Security
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.ecorecover.app.data.model.ProfileData
+import com.ecorecover.app.presentation.common.LoadingScreen
+import com.ecorecover.app.util.SessionManager
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
-    fullName: String,
-    email: String,
-    onLogout: () -> Unit
+    sessionManager: SessionManager,
+    onLogout: () -> Unit,
+    viewModel: ProfileViewModel = viewModel()
 ) {
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
-    ) {
-        Column(
+    val uiState by viewModel.uiState.collectAsState()
+    val isUpdating by viewModel.isUpdating.collectAsState()
+    val updateMessage by viewModel.updateMessage.collectAsState()
+    val context = LocalContext.current
+
+    var showEditDialog by remember { mutableStateOf(false) }
+    var newNameInput by remember { mutableStateOf("") }
+    
+    // Privacy and About Dialog states
+    var showPrivacyDialog by remember { mutableStateOf(false) }
+    var showAboutDialog by remember { mutableStateOf(false) }
+
+    // Switched states
+    val darkModeChecked by sessionManager.isDarkMode.collectAsState()
+    var notificationsChecked by remember { mutableStateOf(true) }
+
+    LaunchedEffect(updateMessage) {
+        updateMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            viewModel.clearUpdateMessage()
+            showEditDialog = false
+        }
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Profile Settings", fontWeight = FontWeight.Bold) },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                )
+            )
+        }
+    ) { paddingValues ->
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .background(MaterialTheme.colorScheme.background)
+                .padding(paddingValues)
         ) {
-            Spacer(modifier = Modifier.height(40.dp))
-
-            // Avatar Container
-            Box(
-                modifier = Modifier
-                    .size(120.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = null,
-                    modifier = Modifier.size(64.dp),
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // User Info
-            Text(
-                text = fullName,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-
-            Text(
-                text = email,
-                fontSize = 14.sp,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
-            )
-
-            Spacer(modifier = Modifier.height(40.dp))
-
-            // Carbon impact banner card
-            Card(
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
-                ),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    horizontalAlignment = Alignment.Start
-                ) {
-                    Text(
-                        text = "🌱 Your Eco Impact",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Every device recycled contributes to reducing carbon footprints and reclaiming precious metals. Ready to make your first trade?",
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+            when (val state = uiState) {
+                is ProfileUiState.Loading -> LoadingScreen()
+                is ProfileUiState.Error -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(text = state.message, color = MaterialTheme.colorScheme.error)
+                    }
+                }
+                is ProfileUiState.Success -> {
+                    ProfileContent(
+                        profile = state.profile,
+                        darkModeChecked = darkModeChecked,
+                        onDarkModeChange = { sessionManager.setDarkMode(it) },
+                        notificationsChecked = notificationsChecked,
+                        onNotificationsChange = { notificationsChecked = it },
+                        onEditNameClick = {
+                            newNameInput = state.profile.fullName
+                            showEditDialog = true
+                        },
+                        onPrivacyClick = { showPrivacyDialog = true },
+                        onAboutClick = { showAboutDialog = true },
+                        onLogout = onLogout
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.weight(1f))
-
-            // Logout CTA
-            Button(
-                onClick = onLogout,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.error,
-                    contentColor = MaterialTheme.colorScheme.onError
-                ),
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-            ) {
-                Icon(Icons.Default.ExitToApp, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Log Out",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
+            if (showEditDialog) {
+                AlertDialog(
+                    onDismissRequest = { if (!isUpdating) showEditDialog = false },
+                    title = { Text("Edit Profile Name") },
+                    text = {
+                        Column {
+                            OutlinedTextField(
+                                value = newNameInput,
+                                onValueChange = { newNameInput = it },
+                                label = { Text("Full Name") },
+                                singleLine = true,
+                                enabled = !isUpdating,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            if (isUpdating) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                            }
+                        }
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                if (newNameInput.isNotBlank()) {
+                                    viewModel.updateProfileName(newNameInput, sessionManager)
+                                }
+                            },
+                            enabled = !isUpdating && newNameInput.isNotBlank()
+                        ) {
+                            Text("Save")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(
+                            onClick = { showEditDialog = false },
+                            enabled = !isUpdating
+                        ) {
+                            Text("Cancel")
+                        }
+                    }
                 )
             }
-            
-            Spacer(modifier = Modifier.height(16.dp))
+
+            if (showPrivacyDialog) {
+                AlertDialog(
+                    onDismissRequest = { showPrivacyDialog = false },
+                    title = { Text("Privacy Policy") },
+                    text = {
+                        Text("EcoRecover complies with data protection acts. We securely encrypt all user credentials, tokens, and pickup addresses. Your device diagnostic data is never shared with unauthorized third parties.")
+                    },
+                    confirmButton = {
+                        Button(onClick = { showPrivacyDialog = false }) {
+                            Text("Close")
+                        }
+                    }
+                )
+            }
+
+            if (showAboutDialog) {
+                AlertDialog(
+                    onDismissRequest = { showAboutDialog = false },
+                    title = { Text("About EcoRecover") },
+                    text = {
+                        Text("EcoRecover is a community e-waste recycling framework that leverages AI-driven live pricing and verified green rewards. Join us in diverting electronic waste from landfills to reclaim precious earth metals.")
+                    },
+                    confirmButton = {
+                        Button(onClick = { showAboutDialog = false }) {
+                            Text("Close")
+                        }
+                    }
+                )
+            }
         }
+    }
+}
+
+@Composable
+private fun ProfileContent(
+    profile: ProfileData,
+    darkModeChecked: Boolean,
+    onDarkModeChange: (Boolean) -> Unit,
+    notificationsChecked: Boolean,
+    onNotificationsChange: (Boolean) -> Unit,
+    onEditNameClick: () -> Unit,
+    onPrivacyClick: () -> Unit,
+    onAboutClick: () -> Unit,
+    onLogout: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Avatar
+        Box(
+            modifier = Modifier
+                .size(100.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primaryContainer),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = profile.fullName.firstOrNull()?.uppercase() ?: "U",
+                fontWeight = FontWeight.Bold,
+                fontSize = 36.sp,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // User Info Header
+        Text(
+            text = profile.fullName,
+            fontSize = 22.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        Text(
+            text = profile.email,
+            fontSize = 14.sp,
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Settings Category List
+        Text(
+            text = "App Settings",
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.fillMaxWidth(),
+            style = MaterialTheme.typography.titleMedium
+        )
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f))
+        ) {
+            Column {
+                SettingsItem(
+                    icon = Icons.Outlined.Edit,
+                    title = "Edit Profile Name",
+                    subtitle = "Update your full name",
+                    onClick = onEditNameClick
+                )
+                HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
+                
+                SettingsSwitchItem(
+                    icon = Icons.Default.Brightness4,
+                    title = "Dark Mode",
+                    subtitle = "System default",
+                    checked = darkModeChecked,
+                    onCheckedChange = onDarkModeChange
+                )
+                HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
+
+                SettingsSwitchItem(
+                    icon = Icons.Outlined.Notifications,
+                    title = "Push Notifications",
+                    subtitle = "Alerts on pickup assignments",
+                    checked = notificationsChecked,
+                    onCheckedChange = onNotificationsChange
+                )
+            }
+        }
+
+        Text(
+            text = "Support & Legal",
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.fillMaxWidth(),
+            style = MaterialTheme.typography.titleMedium
+        )
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f))
+        ) {
+            Column {
+                SettingsItem(
+                    icon = Icons.Outlined.Security,
+                    title = "Privacy Policy",
+                    subtitle = "How we protect your e-waste records",
+                    onClick = onPrivacyClick
+                )
+                HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
+                
+                SettingsItem(
+                    icon = Icons.Outlined.Info,
+                    title = "About EcoRecover",
+                    subtitle = "Recycling objectives and framework",
+                    onClick = onAboutClick
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        // Log out CTA
+        Button(
+            onClick = onLogout,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+        ) {
+            Icon(imageVector = Icons.Default.ExitToApp, contentDescription = null)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Log Out", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+        }
+
+        Text(
+            text = "App Version 1.0.0",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+            modifier = Modifier.padding(vertical = 8.dp)
+        )
+    }
+}
+
+@Composable
+private fun SettingsItem(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(24.dp)
+        )
+        Spacer(modifier = Modifier.width(16.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = title, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            Text(
+                text = subtitle,
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+            )
+        }
+        Icon(
+            imageVector = Icons.Default.ChevronRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.outline
+        )
+    }
+}
+
+@Composable
+private fun SettingsSwitchItem(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    subtitle: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(24.dp)
+        )
+        Spacer(modifier = Modifier.width(16.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = title, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            Text(
+                text = subtitle,
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+            )
+        }
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange
+        )
     }
 }

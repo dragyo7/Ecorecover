@@ -13,9 +13,15 @@ import com.ecorecover.app.data.model.ResendResponse
 import com.ecorecover.app.data.model.AppointmentRequest
 import com.ecorecover.app.data.model.AppointmentResponse
 import com.ecorecover.app.data.model.AppointmentCreateResponse
+import com.ecorecover.app.data.model.RewardsResponse
+import com.ecorecover.app.data.model.ProfileResponse
+import com.ecorecover.app.data.model.ProfileUpdateRequest
+import com.ecorecover.app.data.model.OrderDetailResponse
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.PUT
+import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface ApiService {
@@ -55,4 +61,23 @@ interface ApiService {
 
     @GET("api/v1/appointments/")
     suspend fun getAppointments(): AppointmentResponse
+
+    @GET("api/v1/orders/")
+    suspend fun getOrders(): AppointmentResponse
+
+    @GET("api/v1/orders/{id}")
+    suspend fun getOrderDetail(
+        @Path("id") orderId: String
+    ): OrderDetailResponse
+
+    @GET("api/v1/rewards/")
+    suspend fun getRewards(): RewardsResponse
+
+    @GET("api/v1/profile/")
+    suspend fun getProfile(): ProfileResponse
+
+    @PUT("api/v1/profile/")
+    suspend fun updateProfile(
+        @Body request: ProfileUpdateRequest
+    ): ProfileResponse
 }

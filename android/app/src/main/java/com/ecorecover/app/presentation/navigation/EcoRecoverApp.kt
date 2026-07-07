@@ -31,16 +31,18 @@ import com.ecorecover.app.presentation.screens.search.SearchViewModel
 import com.ecorecover.app.presentation.screens.pickup.PickupScreen
 import com.ecorecover.app.presentation.screens.pickup.PickupViewModel
 import com.ecorecover.app.presentation.screens.orders.OrdersScreen
+import com.ecorecover.app.presentation.screens.orders.OrderDetailScreen
 import com.ecorecover.app.presentation.screens.rewards.RewardsScreen
 import com.ecorecover.app.data.repository.AuthRepository
 import com.ecorecover.app.data.repository.MarketRepository
 import com.ecorecover.app.util.SessionManager
 
 @Composable
-fun EcoRecoverApp() {
-
+fun EcoRecoverApp(
+    providedSessionManager: SessionManager? = null
+) {
     val context = LocalContext.current
-    val sessionManager = remember { SessionManager(context) }
+    val sessionManager = remember(providedSessionManager) { providedSessionManager ?: SessionManager(context) }
     val authRepository = remember { AuthRepository() }
     val authViewModel: AuthViewModel = viewModel(
         factory = AuthViewModel.Factory(authRepository, sessionManager)
@@ -176,6 +178,7 @@ fun EcoRecoverApp() {
                         product = product,
                         onNavigateBack = { navController.navigateUp() },
                         onNavigateToPickup = {
+                            println("[DIAGNOSTIC] onNavigateToPickup called with product: '$product'")
                             navController.navigate(Screen.Pickup.createRoute(product))
                         },
                         viewModel = estimateViewModel
@@ -210,7 +213,7 @@ fun EcoRecoverApp() {
                             }
                         },
                         onNavigateToHistory = {
-                            navController.navigate(Screen.History.route) {
+                            navController.navigate(Screen.Orders.route) {
                                 popUpTo(navController.graph.findStartDestination().id) {
                                     saveState = true
                                 }
@@ -230,7 +233,31 @@ fun EcoRecoverApp() {
                         }
                     }
                 } else {
-                    OrdersScreen(onNavigateBack = { navController.navigateUp() })
+                    OrdersScreen(
+                        onNavigateBack = { navController.navigateUp() },
+                        onNavigateToDetail = { orderId ->
+                            navController.navigate(Screen.OrderDetail.createRoute(orderId))
+                        }
+                    )
+                }
+            }
+
+            composable(
+                route = Screen.OrderDetail.route,
+                arguments = listOf(navArgument("id") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val orderId = backStackEntry.arguments?.getString("id") ?: ""
+                if (!sessionManager.isLoggedIn()) {
+                    LaunchedEffect(Unit) {
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
+                } else {
+                    OrderDetailScreen(
+                        orderId = orderId,
+                        onNavigateBack = { navController.navigateUp() }
+                    )
                 }
             }
 
@@ -295,8 +322,7 @@ fun EcoRecoverApp() {
                     }
                 } else {
                     ProfileScreen(
-                        fullName = sessionManager.getFullName() ?: "EcoUser",
-                        email = sessionManager.getEmail() ?: "",
+                        sessionManager = sessionManager,
                         onLogout = {
                             authViewModel.logout()
                             navController.navigate(Screen.Login.route) {

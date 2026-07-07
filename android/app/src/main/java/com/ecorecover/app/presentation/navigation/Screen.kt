@@ -109,13 +109,22 @@ sealed class Screen(
         Icons.Outlined.Stars
     )
 
+    object OrderDetail : Screen(
+        "orders/{id}",
+        "Order Details",
+        Icons.Outlined.ReceiptLong
+    ) {
+        fun createRoute(orderId: String) = "orders/$orderId"
+    }
+
     companion object {
 
         val bottomBarItems: List<Screen>
             get() = listOf(
                 Home,
                 Market,
-                History,
+                Orders,
+                Rewards,
                 Profile
             )
     }

@@ -6,6 +6,8 @@ import com.ecorecover.app.data.model.SignupRequest
 import com.ecorecover.app.data.model.SignupResponse
 import com.ecorecover.app.data.model.ResendRequest
 import com.ecorecover.app.data.model.ResendResponse
+import com.ecorecover.app.data.model.ProfileResponse
+import com.ecorecover.app.data.model.ProfileUpdateRequest
 import com.ecorecover.app.data.remote.RetrofitClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -22,5 +24,13 @@ class AuthRepository {
 
     suspend fun resend(request: ResendRequest): ResendResponse = withContext(Dispatchers.IO) {
         RetrofitClient.api.resend(request)
+    }
+
+    suspend fun getProfile(): ProfileResponse = withContext(Dispatchers.IO) {
+        RetrofitClient.api.getProfile()
+    }
+
+    suspend fun updateProfile(request: ProfileUpdateRequest): ProfileResponse = withContext(Dispatchers.IO) {
+        RetrofitClient.api.updateProfile(request)
     }
 }

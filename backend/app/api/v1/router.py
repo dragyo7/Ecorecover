@@ -8,6 +8,9 @@ from app.api.v1.endpoints import (
     auth,
     appointments,
     history,
+    orders,
+    rewards,
+    profile,
 )
 
 api_router = APIRouter()
@@ -46,4 +49,22 @@ api_router.include_router(
     search.router,
     prefix="/search",
     tags=["Search"]
+)
+
+api_router.include_router(
+    orders.router,
+    prefix="/orders",
+    tags=["Orders"]
+)
+
+api_router.include_router(
+    rewards.router,
+    prefix="/rewards",
+    tags=["Rewards"]
+)
+
+api_router.include_router(
+    profile.router,
+    prefix="/profile",
+    tags=["Profile"]
 )

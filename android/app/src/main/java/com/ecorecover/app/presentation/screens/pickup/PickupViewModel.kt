@@ -21,6 +21,7 @@ class PickupViewModel : ViewModel() {
     val uiState: StateFlow<PickupUiState> = _uiState.asStateFlow()
 
     fun loadEstimate(product: String) {
+        println("[DIAGNOSTIC] PickupViewModel.loadEstimate received product: '$product' (length: ${product.length})")
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
             try {

@@ -17,7 +17,7 @@ class EstimateViewModel : ViewModel() {
     val uiState: StateFlow<EstimateUiState> = _uiState
 
     fun loadEstimate(product: String) {
-
+        println("[DIAGNOSTIC] EstimateViewModel.loadEstimate received product: '$product' (length: ${product.length})")
         viewModelScope.launch {
 
             _uiState.value = EstimateUiState(

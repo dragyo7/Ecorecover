@@ -4,6 +4,7 @@ import android.util.Log
 import com.ecorecover.app.data.model.AppointmentRequest
 import com.ecorecover.app.data.model.AppointmentResponse
 import com.ecorecover.app.data.model.AppointmentCreateResponse
+import com.ecorecover.app.data.model.OrderDetailResponse
 import com.ecorecover.app.data.remote.RetrofitClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -19,5 +20,13 @@ class AppointmentRepository {
         val resp = RetrofitClient.api.getAppointments()
         Log.d("RepoTrace", "Repository received response success=${resp.success}, dataSize=${resp.data?.size}")
         resp
+    }
+
+    suspend fun getOrders(): AppointmentResponse = withContext(Dispatchers.IO) {
+        RetrofitClient.api.getOrders()
+    }
+
+    suspend fun getOrderDetail(orderId: String): OrderDetailResponse = withContext(Dispatchers.IO) {
+        RetrofitClient.api.getOrderDetail(orderId)
     }
 }
