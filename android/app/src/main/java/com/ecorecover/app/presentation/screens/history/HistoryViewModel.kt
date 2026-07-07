@@ -26,44 +26,44 @@ class HistoryViewModel : ViewModel() {
     private val _uiState = MutableStateFlow<HistoryUiState>(HistoryUiState.Loading)
     val uiState: StateFlow<HistoryUiState> = _uiState.asStateFlow()
 
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
     init {
-        Log.d("HistoryTrace", "HistoryViewModel created")
         Log.d("HistoryTrace", "HistoryViewModel created")
         loadHistory()
     }
 
-    fun loadHistory() {
-        Log.d("HistoryTrace", "loadHistory() invoked")
-        Log.d("HistoryTrace", "loadHistory() invoked")
+    fun loadHistory(isRefresh: Boolean = false) {
+        Log.d("HistoryTrace", "loadHistory() invoked, isRefresh=$isRefresh")
         viewModelScope.launch {
-            _uiState.value = HistoryUiState.Loading
-            Log.d("HistoryTrace", "Set UI state to Loading")
+            if (!isRefresh) {
+                _uiState.value = HistoryUiState.Loading
+            } else {
+                _isRefreshing.value = true
+            }
             try {
                 Log.d("HistoryTrace", "Calling repository.getAppointments()")
                 val response = withContext(Dispatchers.IO) { appointmentRepository.getAppointments() }
                 Log.d("HistoryTrace", "Repository response success=${response.success}, dataSize=${response.data?.size}")
                 if (response.success && response.data != null) {
                     val list = response.data
-                    Log.d("HistoryTrace", "Response data size=${list.size}")
                     if (list.isEmpty()) {
                         _uiState.value = HistoryUiState.Empty
-                Log.d("HistoryTrace", "Emitted Empty state")
-                        Log.d("HistoryTrace", "Emitted Empty state")
                     } else {
                         _uiState.value = HistoryUiState.Success(list)
-                Log.d("HistoryTrace", "Emitted Success state with ${list.size} appointments")
-                        Log.d("HistoryTrace", "Emitted Success state with ${list.size} appointments")
                     }
                 } else {
                     val msg = response.message ?: "Failed to load history"
-                Log.d("HistoryTrace", "Emitted Error state: $msg")
                     _uiState.value = HistoryUiState.Error(msg)
-                    Log.d("HistoryTrace", "Emitted Error state: $msg")
                 }
             } catch (e: Exception) {
                 val err = e.localizedMessage ?: "Unknown error"
                 _uiState.value = HistoryUiState.Error(err)
-                Log.d("HistoryTrace", "Exception caught: $err")
+            } finally {
+                if (isRefresh) {
+                    _isRefreshing.value = false
+                }
             }
         }
     }

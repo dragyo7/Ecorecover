@@ -32,7 +32,9 @@ import androidx.compose.ui.unit.sp
 import com.ecorecover.app.data.model.MetalPrice
 import com.ecorecover.app.data.model.AppointmentData
 import com.ecorecover.app.presentation.components.AppointmentCard
+import androidx.compose.foundation.BorderStroke
 import com.ecorecover.app.presentation.navigation.Screen
+import com.ecorecover.app.presentation.screens.orders.StatusBadge
 import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -48,30 +50,47 @@ fun HomeContent(
         onRefresh = onRefresh,
         modifier = Modifier.fillMaxSize()
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .verticalScroll(rememberScrollState())
-                .padding(bottom = 24.dp)
-        ) {
-            when (uiState) {
+        Crossfade(targetState = uiState, label = "homeStateTransition", modifier = Modifier.fillMaxSize()) { state ->
+            when (state) {
                 is HomeUiState.Loading -> {
-                    HomeSkeleton()
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.background)
+                            .verticalScroll(rememberScrollState())
+                    ) {
+                        HomeSkeleton()
+                    }
                 }
                 is HomeUiState.Error -> {
-                    HomeErrorState(
-                        message = uiState.message,
-                        onRetry = onRefresh
-                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.background)
+                            .verticalScroll(rememberScrollState()),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        HomeErrorState(
+                            message = state.message,
+                            onRetry = onRefresh
+                        )
+                    }
                 }
                 is HomeUiState.Success -> {
-                    HomeSuccessState(
-                        userName = uiState.userName,
-                        metalPrices = uiState.metalPrices,
-                        appointments = uiState.appointments,
-                        onNavigate = onNavigate
-                    )
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.background)
+                            .verticalScroll(rememberScrollState())
+                            .padding(bottom = 24.dp)
+                    ) {
+                        HomeSuccessState(
+                            userName = state.userName,
+                            metalPrices = state.metalPrices,
+                            appointments = state.appointments,
+                            onNavigate = onNavigate
+                        )
+                    }
                 }
             }
         }
@@ -163,15 +182,20 @@ private fun HomeSuccessState(
                 }
 
                 // Blinkit style speed banner
+                val upcomingPickup = appointments.firstOrNull { it.status.lowercase() in listOf("pending", "confirmed", "scheduled") }
+                val speedBannerText = if (upcomingPickup != null) "Pickup Active" else "No active pickup"
+                val speedBannerBg = if (upcomingPickup != null) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
+                val speedBannerFg = if (upcomingPickup != null) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
+
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(12.dp))
-                        .background(MaterialTheme.colorScheme.secondaryContainer)
+                        .background(speedBannerBg)
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Text(
-                        text = "No active pickup",
-                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        text = speedBannerText,
+                        color = speedBannerFg,
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.sp
                     )
@@ -246,6 +270,177 @@ private fun HomeSuccessState(
                     label = { Text("$emoji $name") },
                     shape = RoundedCornerShape(16.dp)
                 )
+            }
+        }
+    }
+
+    Spacer(modifier = Modifier.height(16.dp))
+
+    // Rewards Summary
+    val completed = appointments.filter { it.status.lowercase() == "completed" }
+    val devicesRecycled = completed.size
+    val moneyEarned = completed.sumOf { it.estimatedPrice }
+    var co2Saved = 0.0
+    for (a in completed) {
+        val name = a.productName.lowercase()
+        if (name.contains("phone") || name.contains("iphone")) {
+            co2Saved += 1.4
+        } else if (name.contains("laptop") || name.contains("macbook")) {
+            co2Saved += 4.8
+        } else {
+            co2Saved += 2.5
+        }
+    }
+    val ecoPoints = maxOf(devicesRecycled * 100 + (moneyEarned / 10).toInt(), 150)
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.15f)),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f))
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("🌱", fontSize = 16.sp)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "My Green Impact",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                    )
+                }
+                Text(
+                    text = "View Leaderboard >",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.tertiary,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.clickable { onNavigate(Screen.Rewards.route) }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                RewardStatItem(
+                    value = "$ecoPoints",
+                    label = "Eco Points",
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.weight(1f)
+                )
+                Box(
+                    modifier = Modifier
+                        .width(1.dp)
+                        .height(36.dp)
+                        .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
+                )
+                RewardStatItem(
+                    value = "$devicesRecycled",
+                    label = "Recycled",
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f)
+                )
+                Box(
+                    modifier = Modifier
+                        .width(1.dp)
+                        .height(36.dp)
+                        .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
+                )
+                RewardStatItem(
+                    value = "${String.format("%.1f", co2Saved)} kg",
+                    label = "CO₂ Saved",
+                    color = Color(0xFF22C55E),
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+
+    // Upcoming Pickup Card
+    val activePickup = appointments.firstOrNull { it.status.lowercase() in listOf("pending", "confirmed", "scheduled") }
+    if (activePickup != null) {
+        Spacer(modifier = Modifier.height(16.dp))
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .clickable { onNavigate(Screen.Orders.route + "/${activePickup.id}") },
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("📅", fontSize = 16.sp)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Upcoming Pickup",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    StatusBadge(status = activePickup.status)
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = activePickup.productName,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = "Date & Time Slot",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        )
+                        Text(
+                            text = "${activePickup.appointmentDate} • ${activePickup.appointmentTime}",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(
+                            text = "Est. Payout",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        )
+                        Text(
+                            text = "₹${String.format("%.2f", activePickup.estimatedPrice)}",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
             }
         }
     }
@@ -462,7 +657,10 @@ private fun HomeSuccessState(
 
     // 7. RECENT ACTIVITY SECTION
     Column(modifier = Modifier.padding(horizontal = 20.dp)) {
-        RecentActivitySection(appointments = appointments)
+        RecentActivitySection(
+            appointments = appointments,
+            onNavigate = onNavigate
+        )
     }
 }
 
@@ -686,5 +884,32 @@ private fun HomeErrorState(
                 Text("Retry Connection")
             }
         }
+    }
+}
+
+@Composable
+private fun RewardStatItem(
+    value: String,
+    label: String,
+    color: Color,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Black,
+            color = color
+        )
+        Spacer(modifier = Modifier.height(2.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+            fontWeight = FontWeight.Medium
+        )
     }
 }

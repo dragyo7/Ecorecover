@@ -5,8 +5,10 @@ import com.ecorecover.app.data.remote.RetrofitClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
+import com.ecorecover.app.data.remote.safeApiCall
+
 class RewardsRepository {
     suspend fun getRewards(): RewardsResponse = withContext(Dispatchers.IO) {
-        RetrofitClient.api.getRewards()
+        safeApiCall { RetrofitClient.api.getRewards() }
     }
 }

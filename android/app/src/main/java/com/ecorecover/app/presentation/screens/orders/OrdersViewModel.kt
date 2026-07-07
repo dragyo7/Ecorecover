@@ -31,13 +31,20 @@ class OrdersViewModel : ViewModel() {
     private val _detailUiState = MutableStateFlow<OrderDetailUiState>(OrderDetailUiState.Loading)
     val detailUiState: StateFlow<OrderDetailUiState> = _detailUiState.asStateFlow()
 
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
     init {
         loadOrders()
     }
 
-    fun loadOrders() {
+    fun loadOrders(isRefresh: Boolean = false) {
         viewModelScope.launch {
-            _uiState.value = OrdersUiState.Loading
+            if (!isRefresh) {
+                _uiState.value = OrdersUiState.Loading
+            } else {
+                _isRefreshing.value = true
+            }
             try {
                 val response = repository.getOrders()
                 if (response.success && response.data != null) {
@@ -51,6 +58,10 @@ class OrdersViewModel : ViewModel() {
                 }
             } catch (e: Exception) {
                 _uiState.value = OrdersUiState.Error(e.localizedMessage ?: "Unknown error occurred")
+            } finally {
+                if (isRefresh) {
+                    _isRefreshing.value = false
+                }
             }
         }
     }

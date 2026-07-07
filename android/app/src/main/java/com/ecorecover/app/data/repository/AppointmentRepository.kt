@@ -9,24 +9,26 @@ import com.ecorecover.app.data.remote.RetrofitClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
+import com.ecorecover.app.data.remote.safeApiCall
+
 class AppointmentRepository {
 
     suspend fun createAppointment(request: AppointmentRequest): AppointmentCreateResponse = withContext(Dispatchers.IO) {
-        RetrofitClient.api.createAppointment(request)
+        safeApiCall { RetrofitClient.api.createAppointment(request) }
     }
 
     suspend fun getAppointments(): AppointmentResponse = withContext(Dispatchers.IO) {
         Log.d("RepoTrace", "Repository.getAppointments() entered")
-        val resp = RetrofitClient.api.getAppointments()
+        val resp = safeApiCall { RetrofitClient.api.getAppointments() }
         Log.d("RepoTrace", "Repository received response success=${resp.success}, dataSize=${resp.data?.size}")
         resp
     }
 
     suspend fun getOrders(): AppointmentResponse = withContext(Dispatchers.IO) {
-        RetrofitClient.api.getOrders()
+        safeApiCall { RetrofitClient.api.getOrders() }
     }
 
     suspend fun getOrderDetail(orderId: String): OrderDetailResponse = withContext(Dispatchers.IO) {
-        RetrofitClient.api.getOrderDetail(orderId)
+        safeApiCall { RetrofitClient.api.getOrderDetail(orderId) }
     }
 }

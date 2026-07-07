@@ -27,6 +27,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ecorecover.app.data.model.AppointmentData
 import com.ecorecover.app.presentation.common.LoadingScreen
 
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OrdersScreen(
@@ -35,6 +39,7 @@ fun OrdersScreen(
     viewModel: OrdersViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
 
     Scaffold(
         topBar = {
@@ -62,19 +67,25 @@ fun OrdersScreen(
                 .background(MaterialTheme.colorScheme.background)
                 .padding(paddingValues)
         ) {
-            when (val state = uiState) {
-                is OrdersUiState.Loading -> LoadingScreen()
-                is OrdersUiState.Empty -> {
-                    OrdersEmptyState(onNavigateBack)
-                }
-                is OrdersUiState.Error -> {
-                    OrdersErrorState(message = state.message, onRetry = { viewModel.loadOrders() })
-                }
-                is OrdersUiState.Success -> {
-                    OrdersListContent(
-                        orders = state.orders,
-                        onOrderClick = onNavigateToDetail
-                    )
+            PullToRefreshBox(
+                isRefreshing = isRefreshing,
+                onRefresh = { viewModel.loadOrders(isRefresh = true) },
+                modifier = Modifier.fillMaxSize()
+            ) {
+                when (val state = uiState) {
+                    is OrdersUiState.Loading -> LoadingScreen()
+                    is OrdersUiState.Empty -> {
+                        OrdersEmptyState(onNavigateBack)
+                    }
+                    is OrdersUiState.Error -> {
+                        OrdersErrorState(message = state.message, onRetry = { viewModel.loadOrders() })
+                    }
+                    is OrdersUiState.Success -> {
+                        OrdersListContent(
+                            orders = state.orders,
+                            onOrderClick = onNavigateToDetail
+                        )
+                    }
                 }
             }
         }
@@ -219,22 +230,22 @@ private fun OrderCard(
 @Composable
 fun StatusBadge(status: String) {
     val (backgroundColor, textColor) = when (status.lowercase()) {
-        "pending" -> Color(0xFFF59E0B).copy(alpha = 0.15f) to Color(0xFFD97706)
-        "confirmed" -> Color(0xFF3B82F6).copy(alpha = 0.15f) to Color(0xFF2563EB)
-        "completed" -> Color(0xFF10B981).copy(alpha = 0.15f) to Color(0xFF059669)
-        "cancelled" -> Color(0xFFEF4444).copy(alpha = 0.15f) to Color(0xFFDC2626)
+        "pending" -> MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer
+        "confirmed" -> MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer
+        "completed" -> MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
+        "cancelled" -> MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.onErrorContainer
         else -> MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     Box(
         modifier = Modifier
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(8.dp))
             .background(backgroundColor)
             .padding(horizontal = 10.dp, vertical = 4.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = status,
+            text = status.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() },
             color = textColor,
             fontWeight = FontWeight.Bold,
             fontSize = 12.sp
@@ -249,35 +260,52 @@ private fun OrdersEmptyState(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Icon(
-            imageVector = Icons.Outlined.ReceiptLong,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.outline,
-            modifier = Modifier.size(72.dp)
-        )
-        Spacer(modifier = Modifier.height(20.dp))
+        Box(
+            modifier = Modifier
+                .size(96.dp)
+                .clip(androidx.compose.foundation.shape.CircleShape)
+                .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.ReceiptLong,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(48.dp)
+            )
+        }
+        Spacer(modifier = Modifier.height(24.dp))
         Text(
-            text = "No e-waste orders yet",
+            text = "No E-Waste Orders Yet",
             style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = "Your active e-waste pickup appointments and valuation orders will appear here.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 16.dp)
         )
         Spacer(modifier = Modifier.height(32.dp))
         Button(
             onClick = onNavigateBack,
-            shape = RoundedCornerShape(16.dp)
+            shape = RoundedCornerShape(24.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
         ) {
-            Text("Back to Home", modifier = Modifier.padding(horizontal = 8.dp))
+            Text(
+                text = "Back to Home",
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 15.sp,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
+            )
         }
     }
 }
@@ -290,6 +318,7 @@ private fun OrdersErrorState(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center

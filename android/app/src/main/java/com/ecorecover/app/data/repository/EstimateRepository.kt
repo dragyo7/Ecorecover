@@ -6,11 +6,15 @@ import com.ecorecover.app.data.remote.RetrofitClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
+import com.ecorecover.app.data.remote.safeApiCall
+
 class EstimateRepository {
 
     suspend fun getEstimate(product: String): EstimateResponse = withContext(Dispatchers.IO) {
-        RetrofitClient.api.estimate(
-            EstimateRequest(product)
-        )
+        safeApiCall {
+            RetrofitClient.api.estimate(
+                EstimateRequest(product)
+            )
+        }
     }
 }

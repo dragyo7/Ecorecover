@@ -21,13 +21,20 @@ class RewardsViewModel : ViewModel() {
     private val _uiState = MutableStateFlow<RewardsUiState>(RewardsUiState.Loading)
     val uiState: StateFlow<RewardsUiState> = _uiState.asStateFlow()
 
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
     init {
         loadRewards()
     }
 
-    fun loadRewards() {
+    fun loadRewards(isRefresh: Boolean = false) {
         viewModelScope.launch {
-            _uiState.value = RewardsUiState.Loading
+            if (!isRefresh) {
+                _uiState.value = RewardsUiState.Loading
+            } else {
+                _isRefreshing.value = true
+            }
             try {
                 val response = repository.getRewards()
                 if (response.success && response.data != null) {
@@ -37,6 +44,10 @@ class RewardsViewModel : ViewModel() {
                 }
             } catch (e: Exception) {
                 _uiState.value = RewardsUiState.Error(e.localizedMessage ?: "Unknown error occurred")
+            } finally {
+                if (isRefresh) {
+                    _isRefreshing.value = false
+                }
             }
         }
     }

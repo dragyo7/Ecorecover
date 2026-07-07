@@ -8,7 +8,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import com.ecorecover.app.presentation.common.shimmerEffect
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -62,9 +66,7 @@ fun MarketScreen(
             when (val state = uiState) {
 
                 UiState.Loading -> {
-
-                    CircularProgressIndicator()
-
+                    MarketSkeletonList()
                 }
 
                 is UiState.Error -> {
@@ -112,4 +114,19 @@ fun MarketScreen(
 
     }
 
+}
+
+@Composable
+private fun MarketSkeletonList() {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        repeat(3) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(80.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .shimmerEffect()
+            )
+        }
+    }
 }

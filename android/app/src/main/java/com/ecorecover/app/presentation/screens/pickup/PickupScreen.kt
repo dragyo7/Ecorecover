@@ -1,6 +1,11 @@
 package com.ecorecover.app.presentation.screens.pickup
 
 import androidx.compose.animation.*
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -11,11 +16,14 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -57,7 +65,7 @@ fun PickupScreen(
                 navigationIcon = {
                     if (uiState.bookedAppointment == null) {
                         IconButton(onClick = onNavigateBack) {
-                            Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                         }
                     }
                 },
@@ -183,7 +191,7 @@ fun BookingFormContent(
                     )
                 }
 
-                Divider(
+                HorizontalDivider(
                     modifier = Modifier.padding(vertical = 12.dp),
                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.1f)
                 )
@@ -534,6 +542,25 @@ fun ConfirmationContent(
     onGoHome: () -> Unit,
     onGoToHistory: () -> Unit
 ) {
+    var startAnim by remember { mutableStateOf(false) }
+    val scale by animateFloatAsState(
+        targetValue = if (startAnim) 1f else 0f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "successScale"
+    )
+    val rotation by animateFloatAsState(
+        targetValue = if (startAnim) 360f else 0f,
+        animationSpec = tween(durationMillis = 800, easing = FastOutSlowInEasing),
+        label = "successRotation"
+    )
+
+    LaunchedEffect(Unit) {
+        startAnim = true
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -545,6 +572,8 @@ fun ConfirmationContent(
         Box(
             modifier = Modifier
                 .size(96.dp)
+                .scale(scale)
+                .rotate(rotation)
                 .clip(RoundedCornerShape(48.dp))
                 .background(MaterialTheme.colorScheme.primaryContainer),
             contentAlignment = Alignment.Center
@@ -587,18 +616,18 @@ fun ConfirmationContent(
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 DetailRow(label = "Booking ID", value = appointment.id.take(8).uppercase())
-                Divider(modifier = Modifier.padding(vertical = 12.dp))
+                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
                 DetailRow(label = "Recycled Device", value = appointment.productName)
-                Divider(modifier = Modifier.padding(vertical = 12.dp))
+                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
                 DetailRow(
                     label = "Est. Payout",
                     value = "₹ ${String.format(Locale.US, "%.2f", appointment.estimatedPrice)}",
                     valueColor = MaterialTheme.colorScheme.primary,
                     valueBold = true
                 )
-                Divider(modifier = Modifier.padding(vertical = 12.dp))
+                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
                 DetailRow(label = "Scheduled Date", value = appointment.appointmentDate)
-                Divider(modifier = Modifier.padding(vertical = 12.dp))
+                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
                 DetailRow(
                     label = "Time Slot",
                     value = when(appointment.appointmentTime) {
@@ -609,7 +638,7 @@ fun ConfirmationContent(
                         else -> appointment.appointmentTime
                     }
                 )
-                Divider(modifier = Modifier.padding(vertical = 12.dp))
+                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
                 DetailRow(
                     label = "Status",
                     value = "Scheduled", // Override backend status to be explicitly Scheduled as requested

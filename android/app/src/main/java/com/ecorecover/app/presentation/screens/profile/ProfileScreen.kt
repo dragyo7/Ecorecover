@@ -2,6 +2,7 @@ package com.ecorecover.app.presentation.screens.profile
 
 import android.widget.Toast
 import androidx.compose.foundation.background
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -29,6 +30,8 @@ import com.ecorecover.app.data.model.ProfileData
 import com.ecorecover.app.presentation.common.LoadingScreen
 import com.ecorecover.app.util.SessionManager
 
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
@@ -39,6 +42,7 @@ fun ProfileScreen(
     val uiState by viewModel.uiState.collectAsState()
     val isUpdating by viewModel.isUpdating.collectAsState()
     val updateMessage by viewModel.updateMessage.collectAsState()
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
     val context = LocalContext.current
 
     var showEditDialog by remember { mutableStateOf(false) }
@@ -52,15 +56,21 @@ fun ProfileScreen(
     val darkModeChecked by sessionManager.isDarkMode.collectAsState()
     var notificationsChecked by remember { mutableStateOf(true) }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
     LaunchedEffect(updateMessage) {
         updateMessage?.let {
-            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            scope.launch {
+                snackbarHostState.showSnackbar(it)
+            }
             viewModel.clearUpdateMessage()
             showEditDialog = false
         }
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Profile Settings", fontWeight = FontWeight.Bold) },
@@ -76,32 +86,42 @@ fun ProfileScreen(
                 .background(MaterialTheme.colorScheme.background)
                 .padding(paddingValues)
         ) {
-            when (val state = uiState) {
-                is ProfileUiState.Loading -> LoadingScreen()
-                is ProfileUiState.Error -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(text = state.message, color = MaterialTheme.colorScheme.error)
+            PullToRefreshBox(
+                isRefreshing = isRefreshing,
+                onRefresh = { viewModel.loadProfile(isRefresh = true) },
+                modifier = Modifier.fillMaxSize()
+            ) {
+                when (val state = uiState) {
+                    is ProfileUiState.Loading -> LoadingScreen()
+                    is ProfileUiState.Error -> {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .verticalScroll(rememberScrollState()),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(text = state.message, color = MaterialTheme.colorScheme.error)
+                        }
                     }
-                }
-                is ProfileUiState.Success -> {
-                    ProfileContent(
-                        profile = state.profile,
-                        darkModeChecked = darkModeChecked,
-                        onDarkModeChange = { sessionManager.setDarkMode(it) },
-                        notificationsChecked = notificationsChecked,
-                        onNotificationsChange = { notificationsChecked = it },
-                        onEditNameClick = {
-                            newNameInput = state.profile.fullName
-                            showEditDialog = true
-                        },
-                        onPrivacyClick = { showPrivacyDialog = true },
-                        onAboutClick = { showAboutDialog = true },
-                        onLogout = onLogout
-                    )
-                }
+                    is ProfileUiState.Success -> {
+                        ProfileContent(
+                            profile = state.profile,
+                            darkModeChecked = darkModeChecked,
+                            onDarkModeChange = { sessionManager.setDarkMode(it) },
+                            notificationsChecked = notificationsChecked,
+                            onNotificationsChange = { notificationsChecked = it },
+                            onEditNameClick = {
+                                newNameInput = state.profile.fullName
+                                showEditDialog = true
+                            },
+                            onPrivacyClick = { showPrivacyDialog = true },
+                            onAboutClick = { showAboutDialog = true },
+                            onLogout = onLogout
+                        )
+                    }
             }
-
-            if (showEditDialog) {
+        }
+        if (showEditDialog) {
                 AlertDialog(
                     onDismissRequest = { if (!isUpdating) showEditDialog = false },
                     title = { Text("Edit Profile Name") },

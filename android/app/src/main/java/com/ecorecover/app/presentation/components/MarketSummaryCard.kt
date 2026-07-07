@@ -4,8 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.TrendingDown
-import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material.icons.automirrored.filled.TrendingDown
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -39,7 +39,7 @@ fun MarketSummaryCard() {
             MarketRow("Silver", false, "₹179/g")
             MarketRow("Palladium", true, "₹3,700/g")
 
-            Divider(
+            HorizontalDivider(
                 modifier = Modifier.padding(vertical = 16.dp)
             )
 
@@ -88,9 +88,9 @@ private fun MarketRow(
             Icon(
                 imageVector =
                 if (up)
-                    Icons.Default.TrendingUp
+                    Icons.AutoMirrored.Filled.TrendingUp
                 else
-                    Icons.Default.TrendingDown,
+                    Icons.AutoMirrored.Filled.TrendingDown,
 
                 contentDescription = null,
 

@@ -12,25 +12,27 @@ import com.ecorecover.app.data.remote.RetrofitClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
+import com.ecorecover.app.data.remote.safeApiCall
+
 class AuthRepository {
 
     suspend fun signup(request: SignupRequest): SignupResponse = withContext(Dispatchers.IO) {
-        RetrofitClient.api.signup(request)
+        safeApiCall { RetrofitClient.api.signup(request) }
     }
 
     suspend fun login(request: LoginRequest): LoginResponse = withContext(Dispatchers.IO) {
-        RetrofitClient.api.login(request)
+        safeApiCall { RetrofitClient.api.login(request) }
     }
 
     suspend fun resend(request: ResendRequest): ResendResponse = withContext(Dispatchers.IO) {
-        RetrofitClient.api.resend(request)
+        safeApiCall { RetrofitClient.api.resend(request) }
     }
 
     suspend fun getProfile(): ProfileResponse = withContext(Dispatchers.IO) {
-        RetrofitClient.api.getProfile()
+        safeApiCall { RetrofitClient.api.getProfile() }
     }
 
     suspend fun updateProfile(request: ProfileUpdateRequest): ProfileResponse = withContext(Dispatchers.IO) {
-        RetrofitClient.api.updateProfile(request)
+        safeApiCall { RetrofitClient.api.updateProfile(request) }
     }
 }

@@ -29,13 +29,20 @@ class ProfileViewModel : ViewModel() {
     private val _updateMessage = MutableStateFlow<String?>(null)
     val updateMessage: StateFlow<String?> = _updateMessage.asStateFlow()
 
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
     init {
         loadProfile()
     }
 
-    fun loadProfile() {
+    fun loadProfile(isRefresh: Boolean = false) {
         viewModelScope.launch {
-            _uiState.value = ProfileUiState.Loading
+            if (!isRefresh) {
+                _uiState.value = ProfileUiState.Loading
+            } else {
+                _isRefreshing.value = true
+            }
             try {
                 val response = repository.getProfile()
                 if (response.success && response.data != null) {
@@ -45,6 +52,10 @@ class ProfileViewModel : ViewModel() {
                 }
             } catch (e: Exception) {
                 _uiState.value = ProfileUiState.Error(e.localizedMessage ?: "Unknown error occurred")
+            } finally {
+                if (isRefresh) {
+                    _isRefreshing.value = false
+                }
             }
         }
     }

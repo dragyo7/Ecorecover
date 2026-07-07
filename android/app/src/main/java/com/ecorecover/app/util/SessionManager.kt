@@ -15,6 +15,8 @@ class SessionManager(context: Context) {
     private val _sessionState = MutableStateFlow<SessionState>(SessionState.Unauthenticated)
     val sessionState: StateFlow<SessionState> = _sessionState
 
+    val isDarkMode: StateFlow<Boolean> = _isDarkModeFlow
+
     init {
         // Restore persisted session on init
         val token = prefs.getString(KEY_TOKEN, null)
@@ -23,6 +25,7 @@ class SessionManager(context: Context) {
         if (!token.isNullOrBlank() && !userId.isNullOrBlank() && !fullName.isNullOrBlank()) {
             _sessionState.value = SessionState.Authenticated(userId, fullName)
         }
+        _isDarkModeFlow.value = prefs.getBoolean(KEY_DARK_MODE, false)
         // static reference for interceptor
         instance = this
     }
@@ -66,12 +69,9 @@ class SessionManager(context: Context) {
         _sessionState.value = SessionState.Unauthenticated
     }
 
-    private val _isDarkMode = MutableStateFlow(prefs.getBoolean(KEY_DARK_MODE, false))
-    val isDarkMode: StateFlow<Boolean> = _isDarkMode
-
     fun setDarkMode(enabled: Boolean) {
         prefs.edit().putBoolean(KEY_DARK_MODE, enabled).apply()
-        _isDarkMode.value = enabled
+        _isDarkModeFlow.value = enabled
     }
 
     companion object {
@@ -81,6 +81,9 @@ class SessionManager(context: Context) {
         private const val KEY_EMAIL = "email"
         private const val KEY_NAME = "full_name"
         private const val KEY_DARK_MODE = "dark_mode"
+        
+        private val _isDarkModeFlow = MutableStateFlow(false)
+        
         // static reference for interceptor
         var instance: SessionManager? = null
     }
