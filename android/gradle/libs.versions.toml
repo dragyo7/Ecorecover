@@ -12,6 +12,9 @@ composeBom = "2026.02.01"
 retrofit = "2.11.0"
 okhttp = "4.12.0"
 gson = "2.13.1"
+playServicesMaps = "18.2.0"
+mapsCompose = "4.3.0"
+razorpay = "1.6.38"
 
 navigation = "2.9.3"
 lifecycleCompose = "2.9.2"
@@ -62,6 +65,9 @@ okhttp-logging = { group = "com.squareup.okhttp3", name = "logging-interceptor",
 gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
 
 androidx-lifecycle-runtime-compose = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "lifecycleCompose" }
+play-services-maps = { group = "com.google.android.gms", name = "play-services-maps", version.ref = "playServicesMaps" }
+maps-compose = { group = "com.google.maps.android", name = "maps-compose", version.ref = "mapsCompose" }
+razorpay = { group = "com.razorpay", name = "checkout", version.ref = "razorpay" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -1,10 +1,12 @@
 package com.ecorecover.app.presentation.screens.orders
 
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -18,16 +20,18 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
+import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.compose.*
 import com.ecorecover.app.data.model.AppointmentData
 import com.ecorecover.app.presentation.common.LoadingScreen
 import com.ecorecover.app.presentation.navigation.Screen
@@ -93,16 +97,56 @@ private fun TrackingContent(
     order: AppointmentData,
     onNavigateToPayment: (String, Double) -> Unit
 ) {
-    // Animation progress from 0.0 to 1.0
+    val context = LocalContext.current
     var progress by rememberSaveable { mutableStateOf(0.0f) }
     
     // Coroutine to simulate recycler truck movement along the path
-    LaunchedEffect(Unit) {
-        while (progress < 1.0f) {
-            delay(150)
-            progress += 0.015f
-            if (progress > 1.0f) progress = 1.0f
+    LaunchedEffect(progress) {
+        if (progress < 1.0f) {
+            delay(300)
+            progress = (progress + 0.02f).coerceAtMost(1.0f)
         }
+    }
+
+    // Coordinates for Nagpur route
+    val recyclerHub = LatLng(21.1200, 79.0500)
+    val userHome = LatLng(21.1458, 79.0882)
+    val routePoints = remember {
+        listOf(
+            recyclerHub,
+            LatLng(21.1250, 79.0600),
+            LatLng(21.1350, 79.0700),
+            LatLng(21.1400, 79.0800),
+            userHome
+        )
+    }
+
+    // Interpolate Agent Position
+    val currentPosition = remember(progress) {
+        val segmentCount = routePoints.size - 1
+        val scaledProgress = progress * segmentCount
+        val segmentIndex = scaledProgress.toInt().coerceIn(0, segmentCount - 1)
+        val segmentProgress = scaledProgress - segmentIndex
+        val start = routePoints[segmentIndex]
+        val end = routePoints[segmentIndex + 1]
+        
+        LatLng(
+            start.latitude + (end.latitude - start.latitude) * segmentProgress,
+            start.longitude + (end.longitude - start.longitude) * segmentProgress
+        )
+    }
+
+    // Camera Position State
+    val cameraPositionState = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(currentPosition, 13.5f)
+    }
+
+    // Smoothly pan camera as recycler moves
+    LaunchedEffect(currentPosition) {
+        cameraPositionState.animate(
+            CameraUpdateFactory.newLatLngZoom(currentPosition, 13.5f),
+            1000
+        )
     }
 
     // Dynamic stats based on simulation progress
@@ -113,116 +157,61 @@ private fun TrackingContent(
     val currentStage = when {
         progress < 0.15f -> "Pickup Requested"
         progress < 0.35f -> "Recycler Assigned"
-        progress < 0.65f -> "On the Way"
-        progress < 0.85f -> "Arriving"
-        progress < 0.95f -> "Pickup Complete"
-        progress < 0.99f -> "Payment Processing"
-        else -> "Paid"
+        progress < 0.65f -> "On The Way"
+        progress < 0.80f -> "Near You"
+        progress < 0.90f -> "Arrived"
+        progress < 0.98f -> "Pickup Complete"
+        else -> "Payment Released"
     }
-
-    val primaryColor = MaterialTheme.colorScheme.primary
-    val surfaceColor = MaterialTheme.colorScheme.surface
-    val onSurfaceColor = MaterialTheme.colorScheme.onSurface
-    val secondaryColor = MaterialTheme.colorScheme.secondary
 
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
-        // 1. Google-Maps-Style Simulated Map Canvas (Flexible height)
+        // 1. Google Maps View
         Box(
             modifier = Modifier
                 .weight(1.2f)
                 .fillMaxWidth()
-                .background(Color(0xFFE2E8F0)) // Light gray map background
         ) {
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                val width = size.width
-                val height = size.height
-
-                // Draw Nagpur green park circles/rects
-                drawCircle(
-                    color = Color(0xFFDCFCE7),
-                    radius = 120f,
-                    center = Offset(width * 0.2f, height * 0.3f)
+            GoogleMap(
+                modifier = Modifier.fillMaxSize(),
+                cameraPositionState = cameraPositionState,
+                uiSettings = MapUiSettings(
+                    zoomControlsEnabled = false,
+                    myLocationButtonEnabled = false,
+                    compassEnabled = true
                 )
-                drawRect(
-                    color = Color(0xFFDCFCE7),
-                    topLeft = Offset(width * 0.7f, height * 0.6f),
-                    size = Size(180f, 150f)
-                )
-
-                // Draw Nagpur river/lake path (blue curvy line)
-                val riverPath = Path().apply {
-                    moveTo(0f, height * 0.8f)
-                    cubicTo(width * 0.3f, height * 0.75f, width * 0.6f, height * 0.9f, width, height * 0.85f)
-                }
-                drawPath(
-                    path = riverPath,
-                    color = Color(0xFFE0F2FE),
-                    style = Stroke(width = 30f)
+            ) {
+                // Recycler Agent Marker
+                Marker(
+                    state = MarkerState(position = currentPosition),
+                    title = "Recycler Agent",
+                    snippet = "On the way: $currentStage",
+                    icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)
                 )
 
-                // Draw major grid lines / streets (white lines)
-                drawLine(Color.White, Offset(0f, height * 0.4f), Offset(width, height * 0.4f), strokeWidth = 20f)
-                drawLine(Color.White, Offset(width * 0.5f, 0f), Offset(width * 0.5f, height), strokeWidth = 25f)
-                drawLine(Color.White, Offset(0f, height * 0.15f), Offset(width, height * 0.8f), strokeWidth = 15f)
-
-                // Draw route polyline (dotted primary line)
-                val startPoint = Offset(width * 0.15f, height * 0.2f)  // Recycler Hub
-                val midPoint = Offset(width * 0.5f, height * 0.4f)     // Junction
-                val endPoint = Offset(width * 0.75f, height * 0.75f)   // User Location
-
-                val polylinePath = Path().apply {
-                    moveTo(startPoint.x, startPoint.y)
-                    lineTo(midPoint.x, midPoint.y)
-                    lineTo(endPoint.x, endPoint.y)
-                }
-                drawPath(
-                    path = polylinePath,
-                    color = Color(0xFF3B82F6),
-                    style = Stroke(
-                        width = 8f,
-                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(15f, 15f), 0f)
-                    )
+                // User Home Marker
+                Marker(
+                    state = MarkerState(position = userHome),
+                    title = "Your Home",
+                    snippet = "Nagpur Green Park Hub",
+                    icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
                 )
 
-                // Draw Recycler Hub Pin (Green)
-                drawCircle(color = Color(0xFF10B981), radius = 16f, center = startPoint)
-                drawCircle(color = Color.White, radius = 6f, center = startPoint)
-
-                // Draw User Home Pin (Red)
-                drawCircle(color = Color(0xFFEF4444), radius = 18f, center = endPoint)
-                drawCircle(color = Color.White, radius = 8f, center = endPoint)
-
-                // Calculate current animated position of the truck
-                val currentPos = when {
-                    progress < 0.5f -> {
-                        // Interpolate between start and mid
-                        val t = progress / 0.5f
-                        Offset(
-                            startPoint.x + (midPoint.x - startPoint.x) * t,
-                            startPoint.y + (midPoint.y - startPoint.y) * t
-                        )
-                    }
-                    else -> {
-                        // Interpolate between mid and end
-                        val t = (progress - 0.5f) / 0.5f
-                        Offset(
-                            midPoint.x + (endPoint.x - midPoint.x) * t,
-                            midPoint.y + (endPoint.y - midPoint.y) * t
-                        )
-                    }
-                }
-
-                // Draw pulsing accuracy circle at current position
-                drawCircle(
-                    color = Color(0x333B82F6),
-                    radius = 40f + (progress * 10f) % 20f,
-                    center = currentPos
+                // Recycler Hub Marker
+                Marker(
+                    state = MarkerState(position = recyclerHub),
+                    title = "Nagpur Recycler Hub",
+                    snippet = "Green Solutions Nagpur",
+                    icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)
                 )
-                // Draw Recycler Vehicle Indicator
-                drawCircle(color = Color(0xFF3B82F6), radius = 22f, center = currentPos)
-                drawCircle(color = Color.White, radius = 10f, center = currentPos)
+
+                // Polyline Route
+                Polyline(
+                    points = routePoints,
+                    color = MaterialTheme.colorScheme.primary,
+                    width = 12f
+                )
             }
 
             // Floater banner for dynamic time and remaining distance
@@ -249,6 +238,42 @@ private fun TrackingContent(
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.bodyMedium
                     )
+                }
+            }
+
+            // Quick Map Control Floaters (Refresh / Share)
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                FloatingActionButton(
+                    onClick = {
+                        progress = 0.0f
+                        Toast.makeText(context, "Location updated. Tracking restarted.", Toast.LENGTH_SHORT).show()
+                    },
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Icon(Icons.Default.Refresh, contentDescription = "Refresh GPS")
+                }
+
+                FloatingActionButton(
+                    onClick = {
+                        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_SUBJECT, "Track my EcoRecover Pickup")
+                            putExtra(Intent.EXTRA_TEXT, "EcoRecover Live Tracking: My e-waste pickup (ID: #${order.id.take(8).uppercase()}) is at stage: $currentStage ($remainingDistance km away)!")
+                        }
+                        context.startActivity(Intent.createChooser(shareIntent, "Share Live Tracking"))
+                    },
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Icon(Icons.Default.Share, contentDescription = "Share Location")
                 }
             }
         }
@@ -303,60 +328,10 @@ private fun TrackingContent(
                     }
                 }
 
-                Divider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
 
-                // Recycler Info card with Trust elements
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(52.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.secondaryContainer),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("♻️", fontSize = 24.sp)
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = "Green Solutions Nagpur Hub",
-                                fontWeight = FontWeight.Bold,
-                                style = MaterialTheme.typography.bodyLarge
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Icon(
-                                imageVector = Icons.Default.Verified,
-                                contentDescription = "Verified Recycler",
-                                tint = Color(0xFF22C55E),
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-                        Text(
-                            text = "Lic: LIC-RECYCLE-NGP-2026-8801 • GST: 27AAAAA0000A1Z5 (Verified)",
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                        )
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.Star,
-                                contentDescription = null,
-                                tint = Color(0xFFF59E0B),
-                                modifier = Modifier.size(14.dp)
-                            )
-                            Spacer(modifier = Modifier.width(2.dp))
-                            Text(
-                                text = "4.8 (1,240 pickups) • Resp. <30m",
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                }
+                // Expandable Recycler Info card with Trust elements
+                RecyclerVerificationCard()
 
                 // Interactive Call/Message buttons
                 Row(
@@ -364,7 +339,12 @@ private fun TrackingContent(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Button(
-                        onClick = {},
+                        onClick = {
+                            val dialIntent = Intent(Intent.ACTION_DIAL).apply {
+                                data = Uri.parse("tel:+919876543210")
+                            }
+                            context.startActivity(dialIntent)
+                        },
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                         shape = RoundedCornerShape(12.dp)
@@ -375,11 +355,13 @@ private fun TrackingContent(
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Call Helpline", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Call Agent", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
 
                     Button(
-                        onClick = {},
+                        onClick = {
+                            Toast.makeText(context, "Opening secure chat room with Recycler Agent...", Toast.LENGTH_SHORT).show()
+                        },
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                         shape = RoundedCornerShape(12.dp)

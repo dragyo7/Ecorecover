@@ -77,4 +77,7 @@ dependencies {
     
     implementation(libs.androidx.lifecycle.runtime.compose)
 
+    implementation(libs.play.services.maps)
+    implementation(libs.maps.compose)
+    implementation(libs.razorpay)
 }

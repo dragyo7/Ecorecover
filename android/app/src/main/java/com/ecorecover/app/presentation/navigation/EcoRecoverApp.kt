@@ -340,7 +340,25 @@ fun EcoRecoverApp(
                         },
                         onNavigateToTransactions = {
                             navController.navigate(Screen.TransactionHistory.route)
+                        },
+                        onNavigateToKyc = {
+                            navController.navigate(Screen.Kyc.route)
                         }
+                    )
+                }
+            }
+
+            composable(Screen.Kyc.route) {
+                if (!sessionManager.isLoggedIn()) {
+                    LaunchedEffect(Unit) {
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
+                } else {
+                    com.ecorecover.app.presentation.screens.profile.KycScreen(
+                        onNavigateBack = { navController.navigateUp() },
+                        userEmail = sessionManager.getEmail() ?: "user@ecorecover.com"
                     )
                 }
             }

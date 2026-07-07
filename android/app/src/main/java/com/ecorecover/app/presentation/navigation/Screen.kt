@@ -49,6 +49,12 @@ sealed class Screen(
         Icons.Outlined.Person
     )
 
+    object Kyc : Screen(
+        "kyc",
+        "Trust KYC",
+        Icons.Outlined.Person
+    )
+
     object Login : Screen(
         "login",
         "Login",

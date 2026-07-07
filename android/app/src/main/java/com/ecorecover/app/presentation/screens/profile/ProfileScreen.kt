@@ -38,6 +38,7 @@ fun ProfileScreen(
     sessionManager: SessionManager,
     onLogout: () -> Unit,
     onNavigateToTransactions: () -> Unit,
+    onNavigateToKyc: () -> Unit,
     viewModel: ProfileViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -118,7 +119,8 @@ fun ProfileScreen(
                             onPrivacyClick = { showPrivacyDialog = true },
                             onAboutClick = { showAboutDialog = true },
                             onLogout = onLogout,
-                            onNavigateToTransactions = onNavigateToTransactions
+                            onNavigateToTransactions = onNavigateToTransactions,
+                            onNavigateToKyc = onNavigateToKyc
                         )
                     }
             }
@@ -210,7 +212,8 @@ private fun ProfileContent(
     onPrivacyClick: () -> Unit,
     onAboutClick: () -> Unit,
     onLogout: () -> Unit,
-    onNavigateToTransactions: () -> Unit
+    onNavigateToTransactions: () -> Unit,
+    onNavigateToKyc: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -264,7 +267,9 @@ private fun ProfileContent(
         )
 
         Card(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onNavigateToKyc() },
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f))
         ) {
